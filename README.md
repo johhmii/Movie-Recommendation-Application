@@ -1,4 +1,8 @@
 # Movie Recommendation App
 
 ## Contributors:
-### Johnny Rivera - johnnyr.97@csu.fullerton.edu
+### Marco Guirguis
+### Eric Luu
+### Johnny Rivera
+### David Ulloa
+### Andy Vu
