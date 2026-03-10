@@ -1,11 +1,20 @@
 #Simple API wrapper for TMDB 
-
 import requests
 
 BASE_URL = "https://api.themoviedb.org/3"
-API_KEY = "eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiI4YjM1NDliNmNhN2UwNDRhOTA2ZGVhNGQ2MWEzNDEyNSIsIm5iZiI6MTc3MTg5Nzk5My4zMzQsInN1YiI6IjY5OWQwNDg5MzdkMmU0MDYyMDgwZjkyOCIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.e2LDAgcOCcJAra3VjXl-B81nErpwImxXOGZm0eh_6JE"
+API_KEY = "8b3549b6ca7e044a906dea4d61a34125"
 
+
+#Takes user query and returns search results.
 def search_movies(query):
-    response = requests.get(f"{BASE_URL}/search/movie", params={"api_key": API_KEY, "query":query})
+    url = BASE_URL + "/search/movie"
+    response = requests.get(url, params={"api_key": API_KEY, "query":query})
     return response.json().get("results", [])
     
+#Takes movie ID and returns movie details.    
+def get_movie(movie_id):
+    url = BASE_URL + "/movie/" + str(movie_id)
+    response = requests.get(url, params={"api_key": API_KEY})
+    return response.json().get("results", [])
+
+
