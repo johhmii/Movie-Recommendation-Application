@@ -7,7 +7,6 @@
 #Andy Vu
 
 import tkinter as tk
-KEY = "8b3549b6ca7e044a906dea4d61a34125"
 
 # Creates main window
 root = tk.Tk()
