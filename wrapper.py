@@ -15,6 +15,11 @@ def search_movies(query):
 def get_movie(movie_id):
     url = BASE_URL + "/movie/" + str(movie_id)
     response = requests.get(url, params={"api_key": API_KEY})
-    return response.json().get("results", [])
+    return response.json()
 
-
+#Takes movie object and prints movie details.
+def print_movie_details(movie):
+    print(movie["title"])  
+    print(movie["release_date"])    
+    for genre in movie["genres"]:
+        print(genre["name"]) 
