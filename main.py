@@ -10,13 +10,40 @@ import tkinter as tk
 
 # Creates main window
 root = tk.Tk()
+
 #Sets the title of the window (Need name for app)
 root.title("Movie Recommendation App")
-root.geometry("600x400")
+
+#Sets the size of the window
+root.geometry("700x500")
+
+#Sets the background color of the window
+root.configure(bg="#1e1e1e")
 
 # Create search bar
 search_bar = tk.Entry(root, font=("Helvetica", 20), width = 28)
 search_bar.pack(pady=20, padx=20)
+
+#Title Section
+
+title_label = tk.Label(
+    root,
+    text="Movie Recommendation App",
+    font=("Helvetica", 24, "bold"),
+    bg = "#1e1e1e",
+    fg = "white"
+)
+title_label.pack(pady=(20, 10))
+
+#Add small subttitle under the main title
+subtitle_label = tk.Label(
+    root,
+    text="Find your next favorite movie and manage your account",
+    font=("Helvetica", 12),
+    bg="#1e1e1e",
+    fg="#cfcfcf"
+)
+subtitle_label.pack(pady=(0, 20))
 
 searchResults = tk.Listbox(root, font=("Helvetica", 20), height = 20)
 searchResults.pack(fill=tk.BOTH, expand = True, padx = 20, pady = 20)
