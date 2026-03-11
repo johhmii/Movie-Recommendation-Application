@@ -8,7 +8,7 @@ Group 7's submission for Computer Science 362 , Section ?
 * Name: David Ulloa
 * Email: davidulloamontesinos@csu.fullerton.edu
 * Name: Johnny Rivera
-* Email: 
+* Email: johnnyr.97@csu.fullerton.edu
 * Name: Andy Vu
 * Email: 
 * Name: Marco Guirguis
