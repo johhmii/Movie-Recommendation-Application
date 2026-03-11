@@ -9,6 +9,7 @@
 import tkinter as tk
 from wrapper import search_movies, get_movie
 import requests
+from tkinter import messagebox
 
 # Creates main window
 root = tk.Tk()
@@ -234,6 +235,14 @@ search_results = tk.Listbox(
 )
 search_results.pack(fill = tk.BOTH, expand = True, padx = 20, pady = (0,20))
 
+#Keystroke search function, 
+search_delay = None                                  #Initialize to 0
+def on_keyrelease(event):                            #Function runs after each keystroke
+    global search_delay  
+    if search_delay:                                 #If search_delay is already running cancel it
+        root.after_cancel(search_delay)
+    search_delay = root.after(300, sample_search)    #Start a 300ms delay as to not overwhelm API with calls
+search_bar.bind("<KeyRelease>", on_keyrelease)       #Bind function to searchbar
 
 #TEMP SAMPLE SEARCH FUNCTION
 def sample_search():
@@ -241,9 +250,6 @@ def sample_search():
     query = search_bar.get().strip()
     search_results.delete(0, tk.END)
 
-    if not query:
-        tk.messagebox.showerror("No input")
-        return
     movies = search_movies(query)
 
     if not movies:
@@ -254,18 +260,18 @@ def sample_search():
         year = movie.get("release_date", "")[:4]
         search_results.insert(tk.END, f"{title} ({year})")
 
-search_button = tk.Button(
-    search_frame,
-    text="Search",
-    font = ("Helvetica", 13, "bold"),
-    bg = "#4a09e2",
-    fg = "white",
-    activebackground= "#357abd",
-    activeforeground = "white",
-    relief = "flat",
-    command = sample_search
-)
-search_button.pack(side = "left", padx = (10, 0), ipady = 8)
+#search_button = tk.Button(
+    #search_frame,
+    #text="Search",
+    #font = ("Helvetica", 13, "bold"),
+    #bg = "#4a09e2",
+    #fg = "white",
+    #activebackground= "#357abd",
+    #activeforeground = "white",
+    #relief = "flat",
+    #command = sample_search
+#)
+#search_button.pack(side = "left", padx = (10, 0), ipady = 8)
 
 #back button
 back_button = tk.Button(
