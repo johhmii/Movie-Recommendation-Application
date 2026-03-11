@@ -7,6 +7,8 @@
 #Andy Vu
 
 import tkinter as tk
+from wrapper import search_movies, get_movie
+import requests
 
 # Creates main window
 root = tk.Tk()
@@ -237,18 +239,20 @@ search_results.pack(fill = tk.BOTH, expand = True, padx = 20, pady = (0,20))
 def sample_search():
 
     query = search_bar.get().strip()
-
     search_results.delete(0, tk.END)
 
     if not query:
-        tk.messagebox.showerror("Error", "Please enter a title.")
+        tk.messagebox.showerror("No input")
         return
+    movies = search_movies(query)
 
-    #temp fake search results
-    search_results.insert(tk.END, f"{query} (The Godfather)")
-    search_results.insert(tk.END, f"{query} (The Dark Knight)")
-    search_results.insert(tk.END, f"{query} (Pulp Fiction)")
-    search_results.insert(tk.END, f"Reccomended Movies Similar to {query}")
+    if not movies:
+            search_results.insert(tk.END, "No results.")
+            return
+    for movie in movies:
+        title = movie.get("title", "Unknown")
+        year = movie.get("release_date", "")[:4]
+        search_results.insert(tk.END, f"{title} ({year})")
 
 search_button = tk.Button(
     search_frame,
