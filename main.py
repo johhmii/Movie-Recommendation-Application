@@ -6,6 +6,7 @@
 # David Ulloa
 # Andy Vu
 
+import sqlite3 #Python's built in database, Sufficient for our needs and easy to set up, no external dependencies required
 import tkinter as tk
 from tkinter import ttk, messagebox
 from wrapper import search_movies, get_movie
@@ -48,6 +49,26 @@ def show_search_page():
     registration_page.pack_forget()
     search_page.pack(fill="both", expand=True)
 
+
+# -----------------------------
+# SQLITE3 DATABASE SETUP
+# -----------------------------
+
+def setup_database():
+    connection = sqlite3.connect("users.db")
+    cursor = connection.cursor()
+
+    cursor.execute("""
+                   CREATE TABLE IF NOT EXISTS users (
+                       id INTEGER PRIMARY KEY AUTOINCREMENT,
+                       username TEXT NOT NULL UNIQUE,
+                       password TEXT NOT NULL,
+                       email TEXT NOT NULL UNIQUE
+                   )
+                   """)
+
+    connection.commit()
+    connection.close()
 
 # -----------------------------
 # REGISTRATION PAGE
@@ -173,11 +194,23 @@ def register_user():
         messagebox.showerror("Error", "Passwords do not match.")
         return
 
-    # Future database code can go here
-    # Save username, password, and email later
 
-    messagebox.showinfo("Success", "Registration successful!")
-    show_search_page()
+    # Save username, password, and email as plain text in the database, may need to hash later
+
+    try:
+        connection = sqlite3.connect("users.db")
+        cursor = connection.cursor()
+        cursor.execute("INSERT INTO users (username, password, email) VALUES (?, ?, ?)",
+                       (username, password, email))
+        connection.commit()
+        connection.close()
+
+        messagebox.showinfo("Success", "Registration successful!")
+        show_search_page()
+
+    except sqlite3.IntegrityError:
+        messagebox.showerror("Error", "Username or email already exists.")
+
 
 
 # Registration page buttons
@@ -334,6 +367,10 @@ def sample_search():
 
 # Start on the registration page
 registration_page.pack(fill="both", expand=True)
+
+
+#Set up database before starting the app
+setup_database()
 
 # Start the Tkinter event loop
 root.mainloop()
