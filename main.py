@@ -1,239 +1,306 @@
-#Movie Recommendation App
-#Contributors:
-#Marco Guirguis
-#Eric Luu
-#Johnny Rivera
-#David Ulloa
-#Andy Vu
+# Movie Recommendation App
+# Contributors:
+# Marco Guirguis
+# Eric Luu
+# Johnny Rivera
+# David Ulloa
+# Andy Vu
 
 import tkinter as tk
+from tkinter import ttk, messagebox
 from wrapper import search_movies, get_movie
 import requests
-from tkinter import messagebox
+import sv_ttk
 
-# Creates main window
+
+# -----------------------------
+# MAIN WINDOW SETUP
+# -----------------------------
+
+# Create the main window
 root = tk.Tk()
 
-#Sets the title of the window (Need name for app)
+# Set the title of the application window
 root.title("Movie Recommendation App")
 
-#Sets the size of the window
-root.geometry("700x500")
+# Set the starting size of the window
+root.geometry("950x650")
 
-#Sets the background color of the window
-root.configure(bg="#1e1e1e")
+# Prevent the window from becoming too small
+root.minsize(850, 550)
 
-#Switch Pages functions
+# Apply the Sun Valley dark theme
+sv_ttk.set_theme("dark")
+
+
+# -----------------------------
+# PAGE SWITCHING FUNCTIONS
+# -----------------------------
 
 def show_registration_page():
-
+    """Hide the search page and show the registration page."""
     search_page.pack_forget()
-    registration_page.pack(fill = "both", expand = True)
+    registration_page.pack(fill="both", expand=True)
+
 
 def show_search_page():
+    """Hide the registration page and show the search page."""
     registration_page.pack_forget()
-    search_page.pack(fill = "both", expand = True)
+    search_page.pack(fill="both", expand=True)
 
 
-#Create frames forregistration pages
-registration_page = tk.Frame(root, bg="#1e1e1e")
+# -----------------------------
+# REGISTRATION PAGE
+# -----------------------------
 
-#Page Title
-reg_title = tk.Label(
-    registration_page,
+# Main frame for the registration page
+registration_page = ttk.Frame(root, padding=20)
+
+# Wrapper frame helps center the registration card
+reg_wrapper = ttk.Frame(registration_page)
+reg_wrapper.pack(fill="both", expand=True)
+
+# Card-style frame for the registration form
+reg_card = ttk.Frame(reg_wrapper, padding=30)
+reg_card.place(relx=0.5, rely=0.5, anchor="center")
+
+# Registration page title
+reg_title = ttk.Label(
+    reg_card,
     text="Create Your Account",
-    font= ("Helvetica", 24, "bold"),
-    bg="#1e1e1e",
-    fg = "#cfcfcf",
-    )
-reg_title.pack(pady=(25, 10))
+    font=("Helvetica", 24, "bold")
+)
+reg_title.pack(pady=(0, 10))
 
-reg_subtitle = tk.Label(
-    registration_page,
+# Registration page subtitle
+reg_subtitle = ttk.Label(
+    reg_card,
     text="Register Down Below",
-    font = ("Helvetica", 12),
-    bg = "#1e1e1e",
-    fg = "#cfcfcf"
+    font=("Helvetica", 12)
 )
 reg_subtitle.pack(pady=(0, 20))
 
-#Container for registration form
+# Form container
+form_frame = ttk.Frame(reg_card)
+form_frame.pack(fill="x")
 
-form_frame = tk.Frame(registration_page, bg="#252525", padx = 25, pady = 25)
-form_frame.pack(padx = 30, pady = 10)
-
-#USername label
-username_label = tk.Label(
+# Username label
+username_label = ttk.Label(
     form_frame,
     text="Username:",
-    font=("Helvetica", 12),
-    bg="#252525",
-    fg="white"
+    font=("Helvetica", 12)
 )
 username_label.pack(anchor="w", pady=(5, 5))
 
-#Username entry
-username_entry = tk.Entry(
+# Username entry
+username_entry = ttk.Entry(
     form_frame,
     font=("Helvetica", 12),
-    bg="#3a3a3a",
-    fg="white",
-    insertbackground="white",
-    relief="flat"
+    width=35
 )
-username_entry.pack(fill = "x", ipady = 8)
+username_entry.pack(fill="x", ipady=6)
 
-#password label
-password_label = tk.Label(
+# Password label
+password_label = ttk.Label(
     form_frame,
     text="Password:",
-    font=("Helvetica", 12),
-    bg="#252525",
-    fg="white"
+    font=("Helvetica", 12)
 )
 password_label.pack(anchor="w", pady=(15, 5))
 
-#password entry
-password_entry = tk.Entry(
+# Password entry
+password_entry = ttk.Entry(
     form_frame,
     font=("Helvetica", 12),
-    show = "*",
-    bg="#3a3a3a",
-    fg="white",
-    insertbackground="white",
-    relief="flat",
+    width=35,
+    show="*"
 )
-password_entry.pack(fill = "x", ipady = 8)
+password_entry.pack(fill="x", ipady=6)
 
-#confirm password label
-confirm_password_label = tk.Label(
+# Confirm password label
+confirm_password_label = ttk.Label(
     form_frame,
     text="Confirm Password:",
-    font=("Helvetica", 12),
-    bg="#252525",
-    fg="white"
+    font=("Helvetica", 12)
 )
 confirm_password_label.pack(anchor="w", pady=(15, 5))
 
-#confirm password entry
-confirm_password_entry = tk.Entry(
+# Confirm password entry
+confirm_password_entry = ttk.Entry(
     form_frame,
     font=("Helvetica", 12),
-    show = "*",
-    bg="#3a3a3a",
-    fg="white",
-    insertbackground="white",
-    relief="flat",
+    width=35,
+    show="*"
 )
-confirm_password_entry.pack(fill = "x", ipady = 8)
+confirm_password_entry.pack(fill="x", ipady=6)
 
-#Email label
-email_label = tk.Label(
+# Email label
+email_label = ttk.Label(
     form_frame,
     text="Email:",
-    font=("Helvetica", 12),
-    bg="#252525",
-    fg="white"
+    font=("Helvetica", 12)
 )
 email_label.pack(anchor="w", pady=(15, 5))
 
-#Email entry
-email_entry = tk.Entry(
+# Email entry
+email_entry = ttk.Entry(
     form_frame,
     font=("Helvetica", 12),
-    bg="#3a3a3a",
-    fg="white",
-    insertbackground="white",
-    relief="flat",
+    width=35
 )
-email_entry.pack(fill = "x", ipady = 8)
+email_entry.pack(fill="x", ipady=6, pady=(0, 20))
+
 
 def register_user():
+    """Validate registration form and switch to the search page if valid."""
     username = username_entry.get().strip()
     password = password_entry.get().strip()
     confirm_password = confirm_password_entry.get().strip()
     email = email_entry.get().strip()
 
+    # Make sure all fields are filled out
     if not username or not password or not confirm_password or not email:
-        tk.messagebox.showerror("Error", "All fields are required.")
+        messagebox.showerror("Error", "All fields are required.")
         return
-    
+
+    # Basic email validation
     if "@" not in email or "." not in email:
-        tk.messagebox.showerror("Error", "Invalid email format.")
+        messagebox.showerror("Error", "Invalid email format.")
         return
-    
+
+    # Confirm both password fields match
     if password != confirm_password:
-        tk.messagebox.showerror("Error", "Passwords do not match.")
+        messagebox.showerror("Error", "Passwords do not match.")
         return
-    
-    #Need to add code here to sav username and password to database
 
+    # Future database code can go here
+    # Save username, password, and email later
 
-    tk.messagebox.showinfo("Success", "Registration successful!")
-    
+    messagebox.showinfo("Success", "Registration successful!")
     show_search_page()
 
-#Search Page
 
-search_page = tk.Frame(root, bg="#1e1e1e")
+# Registration page buttons
+register_button = ttk.Button(
+    reg_card,
+    text="Register",
+    command=register_user
+)
+register_button.pack(fill="x", ipady=8, pady=(0, 10))
 
-#search page title
-search_title = tk.Label(
-    search_page,
+continue_button = ttk.Button(
+    reg_card,
+    text="Continue to App",
+    command=show_search_page
+)
+continue_button.pack(fill="x", ipady=8)
+
+
+# -----------------------------
+# SEARCH PAGE
+# -----------------------------
+
+# Main frame for the search page
+search_page = ttk.Frame(root, padding=25)
+
+# Header section
+header_frame = ttk.Frame(search_page)
+header_frame.pack(fill="x", pady=(0, 20))
+
+# Search page title
+search_title = ttk.Label(
+    header_frame,
     text="Movie Recommendation App",
-    font= ("Helvetica", 24, "bold"),
-    bg="#1e1e1e",
-    fg = "#cfcfcf",
-    )
-search_title.pack(pady=(20, 10))
+    font=("Helvetica", 24, "bold")
+)
+search_title.pack(anchor="w")
 
-search_subtitle = tk.Label(
-    search_page,
+# Search page subtitle
+search_subtitle = ttk.Label(
+    header_frame,
     text="Search for your favorite movies",
-    font = ("Helvetica", 12),
-    bg = "#1e1e1e",
-    fg = "#cfcfcf"
+    font=("Helvetica", 12)
 )
-search_subtitle.pack(pady=(0, 20))
+search_subtitle.pack(anchor="w", pady=(5, 0))
 
-#seach frame
-search_frame = tk.Frame(search_page, bg="#252525")
-search_frame.pack(fill = "x", padx = 20, pady = 10)
+# Search card
+search_card = ttk.Frame(search_page, padding=20)
+search_card.pack(fill="x", pady=(0, 18))
 
-#seach bar
-search_bar = tk.Entry(
-    search_page,
-    font =  ("Helvetica", 18),
-    bg= "#2b2b2b",
-    fg = "white",
-    insertbackground="white",
-    relief = "flat"
+# Search section title
+search_label = ttk.Label(
+    search_card,
+    text="Search",
+    font=("Helvetica", 14, "bold")
 )
-search_bar.pack(side = "left", fill = "x", expand = True, ipady = 10)
+search_label.pack(anchor="w", pady=(0, 12))
 
-#seach result label box
-results_label = tk.Label(
-    search_page,
+# Row for search bar and buttons
+search_row = ttk.Frame(search_card)
+search_row.pack(fill="x")
+
+# Search bar
+search_bar = ttk.Entry(
+    search_row,
+    font=("Helvetica", 14)
+)
+search_bar.pack(side="left", fill="x", expand=True, ipady=6)
+
+# Optional manual search button
+search_button = ttk.Button(
+    search_row,
+    text="Search",
+    command=lambda: sample_search()
+)
+search_button.pack(side="left", padx=(10, 0), ipady=6)
+
+# Back button
+back_button = ttk.Button(
+    search_row,
+    text="Back to Registration",
+    command=show_registration_page
+)
+back_button.pack(side="left", padx=(10, 0), ipady=6)
+
+# Results card
+results_card = ttk.Frame(search_page, padding=20)
+results_card.pack(fill="both", expand=True)
+
+# Results label
+results_label = ttk.Label(
+    results_card,
     text="Search Results:",
-    font = ("Helvetica", 14, "bold"),
-    bg = "#1e1e1e",
-    fg = "#cfcfcf"
+    font=("Helvetica", 14, "bold")
 )
-results_label.pack(anchor = "w", padx = 20, pady = (15, 5))
+results_label.pack(anchor="w", pady=(0, 12))
 
-#result listbox
+# Frame to hold the listbox and scrollbar
+listbox_frame = ttk.Frame(results_card)
+listbox_frame.pack(fill="both", expand=True)
+
+# Scrollbar for the results list
+scrollbar = ttk.Scrollbar(listbox_frame, orient="vertical")
+scrollbar.pack(side="right", fill="y")
+
+# Listbox for displaying movie results
+# This stays as tk.Listbox because ttk does not provide a Listbox widget
 search_results = tk.Listbox(
-    search_page,
-    font = ("Helvetica", 14),
-    height= 12,
-    bg = "#2b2b2b",
-    fg = "white",
-    selectbackground= "#4a09e2",
-    selectforeground = "white",
-    relief = "flat",
-    highlightthickness= 0
+    listbox_frame,
+    font=("Helvetica", 14),
+    height=12,
+    bg="#2b2b2b",
+    fg="white",
+    selectbackground="#4a90e2",
+    selectforeground="white",
+    relief="flat",
+    highlightthickness=0,
+    yscrollcommand=scrollbar.set
 )
-search_results.pack(fill = tk.BOTH, expand = True, padx = 20, pady = (0,20))
+search_results.pack(fill="both", expand=True)
+
+# Connect scrollbar to listbox
+scrollbar.config(command=search_results.yview)
+
 
 #Keystroke search function, 
 search_delay = None                                  #Initialize to 0
@@ -260,39 +327,13 @@ def sample_search():
         year = movie.get("release_date", "")[:4]
         search_results.insert(tk.END, f"{title} ({year})")
 
-#search_button = tk.Button(
-    #search_frame,
-    #text="Search",
-    #font = ("Helvetica", 13, "bold"),
-    #bg = "#4a09e2",
-    #fg = "white",
-    #activebackground= "#357abd",
-    #activeforeground = "white",
-    #relief = "flat",
-    #command = sample_search
-#)
-#search_button.pack(side = "left", padx = (10, 0), ipady = 8)
 
-#back button
-back_button = tk.Button(
-    search_frame,
-    text="Back to Registration",
-    font = ("Helvetica", 13, "bold"),
-    bg = "#5a5a5a",
-    fg = "white",
-    activebackground= "#707070",
-    activeforeground = "white",
-    relief = "flat",
-    command = show_registration_page
-)
-back_button.pack(pady = (0,20), ipadx = 10, ipady = 6)
+# -----------------------------
+# START APP
+# -----------------------------
 
+# Start on the registration page
+registration_page.pack(fill="both", expand=True)
 
-search_page.pack(fill = "both", expand = True)
-
-
+# Start the Tkinter event loop
 root.mainloop()
-
-
-
-
