@@ -13,6 +13,8 @@ from wrapper import search_movies, get_movie
 import requests
 import sv_ttk
 
+current_user_id = None  # Global variable to store the currently logged-in user's information
+search_result_data = []  # Global variable to store the data of the movies currently displayed in the search results
 
 # -----------------------------
 # MAIN WINDOW SETUP
@@ -223,6 +225,47 @@ def register_user():
     except sqlite3.IntegrityError:
         messagebox.showerror("Error", "Username or email already exists.")
 
+    global current_user_id
+    current_user_id = cursor.lastrowid  # Store the ID of the newly registered user in the global variable
+
+
+
+def add_to_favorites():
+    global current_user_id
+
+    if current_user_id is None:
+        messagebox.showerror("Error", "You must be logged in to add favorites.")
+        return
+    
+    selected_index = search_results.curselection()
+
+    if not selected_index:
+        messagebox.showerror("Error", "Please select a movie to add to favorites.")
+        return
+    
+    selected_index = selected_index[0]  # Get the first selected index
+    movie = search_results_data[selected_index] # Get the movie data corresponding to the selected index
+
+    try:
+        connection = sqlite3.connect("users.db")
+        cursor = connection.cursor()
+        cursor.execute("""
+            INSERT INTO favorites (user_id, movie_id, movie_title, movie_year)
+            VALUES (?, ?, ?, ?)
+        """, (
+        current_user_id, 
+        movie["id"], 
+        movie["title"], 
+        movie["year"]
+        ))
+        connection.commit()
+        connection.close()
+
+        messagebox.showinfo("Success", f"{movie['title']} has been added to your favorites!")
+
+    except sqlite3.IntegrityError:
+        messagebox.showerror("Error", "This movie is already in your favorites.")
+
 
 
 # Registration page buttons
@@ -346,6 +389,14 @@ search_results.pack(fill="both", expand=True)
 # Connect scrollbar to listbox
 scrollbar.config(command=search_results.yview)
 
+# Add to Favorites button
+favorites_button = ttk.Button(
+    search_row,
+    text="Add to Favorites",
+    command = add_to_favorites
+)
+favorites_button.pack(side="left", padx=(10, 0), ipady=6)
+
 
 #Keystroke search function, 
 search_delay = None                                  #Initialize to 0
@@ -357,20 +408,32 @@ def on_keyrelease(event):                            #Function runs after each k
 search_bar.bind("<KeyRelease>", on_keyrelease)       #Bind function to searchbar
 
 #TEMP SAMPLE SEARCH FUNCTION
+search_results_data = []; 
+
 def sample_search():
+    global search_results_data
 
     query = search_bar.get().strip()
     search_results.delete(0, tk.END)
+    search_results_data = []  # Clear previous search results data
 
     movies = search_movies(query)
 
     if not movies:
             search_results.insert(tk.END, "No results.")
             return
+    
     for movie in movies:
         title = movie.get("title", "Unknown")
         year = movie.get("release_date", "")[:4]
+        movie_id = movie.get("id", "")
+
         search_results.insert(tk.END, f"{title} ({year})")
+        search_results_data.append({
+            "id": movie_id,
+            "title": title,
+            "year": year
+        })
 
 
 # -----------------------------
