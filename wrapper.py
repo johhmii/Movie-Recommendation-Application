@@ -14,7 +14,7 @@ def search_movies(query):
 #Takes movie ID and returns movie details.    
 def get_movie(movie_id):
     url = BASE_URL + "/movie/" + str(movie_id)
-    response = requests.get(url, params={"api_key": API_KEY})
+    response = requests.get(url, params={"api_key": API_KEY, "append_to_response": "credits"})
     return response.json()
 
 #Takes movie object and prints movie details.
