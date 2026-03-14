@@ -66,6 +66,18 @@ def setup_database():
                        email TEXT NOT NULL UNIQUE
                    )
                    """)
+    
+    cursor.execute("""
+                    CREATE TABLE IF NOT EXISTS favorites (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        user_id INTEGER NOT NULL,
+                        movie_id TEXT NOT NULL,
+                        movie_title TEXT NOT NULL,
+                        movie_year TEXT,
+                        UNIQUE(user_id, movie_id),
+                        FOREIGN KEY (user_id) REFERENCES users(id)
+        )
+    """)
 
     connection.commit()
     connection.close()
