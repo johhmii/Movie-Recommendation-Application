@@ -56,34 +56,31 @@ def show_search_page():
 # SQLITE3 DATABASE SETUP
 # -----------------------------
 
-def setup_database():
-    connection = sqlite3.connect("users.db")
-    cursor = connection.cursor()
+def initialize_database():
+    with sqlite3.connect("users.db", timeout=10) as connection:
+        cursor = connection.cursor()
 
-    cursor.execute("""
-                   CREATE TABLE IF NOT EXISTS users (
-                       id INTEGER PRIMARY KEY AUTOINCREMENT,
-                       username TEXT NOT NULL UNIQUE,
-                       password TEXT NOT NULL,
-                       email TEXT NOT NULL UNIQUE
-                   )
-                   """)
-    
-    cursor.execute("""
-                    CREATE TABLE IF NOT EXISTS favorites (
-                        id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        user_id INTEGER NOT NULL,
-                        movie_id TEXT NOT NULL,
-                        movie_title TEXT NOT NULL,
-                        movie_year TEXT,
-                        UNIQUE(user_id, movie_id),
-                        FOREIGN KEY (user_id) REFERENCES users(id)
-        )
-    """)
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS users (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                username TEXT NOT NULL UNIQUE,
+                email TEXT NOT NULL UNIQUE,
+                password TEXT NOT NULL
+            )
+        """)
 
-    connection.commit()
-    connection.close()
-
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS favorites (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL,
+                movie_id TEXT NOT NULL,
+                movie_title TEXT NOT NULL,
+                movie_year TEXT,
+                UNIQUE(user_id, movie_id),
+                FOREIGN KEY (user_id) REFERENCES users(id)
+            )
+        """)
+        
 # -----------------------------
 # REGISTRATION PAGE
 # -----------------------------
@@ -187,85 +184,41 @@ email_entry.pack(fill="x", ipady=6, pady=(0, 20))
 
 
 def register_user():
-    """Validate registration form and switch to the search page if valid."""
+
+    global current_user_id
+
     username = username_entry.get().strip()
     password = password_entry.get().strip()
     confirm_password = confirm_password_entry.get().strip()
     email = email_entry.get().strip()
 
-    # Make sure all fields are filled out
     if not username or not password or not confirm_password or not email:
         messagebox.showerror("Error", "All fields are required.")
         return
 
-    # Basic email validation
     if "@" not in email or "." not in email:
         messagebox.showerror("Error", "Invalid email format.")
         return
 
-    # Confirm both password fields match
     if password != confirm_password:
         messagebox.showerror("Error", "Passwords do not match.")
         return
 
-
-    # Save username, password, and email as plain text in the database, may need to hash later
-
     try:
-        connection = sqlite3.connect("users.db")
-        cursor = connection.cursor()
-        cursor.execute("INSERT INTO users (username, password, email) VALUES (?, ?, ?)",
-                       (username, password, email))
-        connection.commit()
-        connection.close()
+        with sqlite3.connect("users.db", timeout=10) as connection:
+            cursor = connection.cursor()
+            cursor.execute(
+                "INSERT INTO users (username, password, email) VALUES (?, ?, ?)",
+                (username, password, email)
+            )
+            current_user_id = cursor.lastrowid
 
         messagebox.showinfo("Success", "Registration successful!")
+        load_favorites()
         show_search_page()
 
     except sqlite3.IntegrityError:
         messagebox.showerror("Error", "Username or email already exists.")
-
-    global current_user_id
-    current_user_id = cursor.lastrowid  # Store the ID of the newly registered user in the global variable
-
-
-
-def add_to_favorites():
-    global current_user_id
-
-    if current_user_id is None:
-        messagebox.showerror("Error", "You must be logged in to add favorites.")
-        return
-    
-    selected_index = search_results.curselection()
-
-    if not selected_index:
-        messagebox.showerror("Error", "Please select a movie to add to favorites.")
-        return
-    
-    selected_index = selected_index[0]  # Get the first selected index
-    movie = search_results_data[selected_index] # Get the movie data corresponding to the selected index
-
-    try:
-        connection = sqlite3.connect("users.db")
-        cursor = connection.cursor()
-        cursor.execute("""
-            INSERT INTO favorites (user_id, movie_id, movie_title, movie_year)
-            VALUES (?, ?, ?, ?)
-        """, (
-        current_user_id, 
-        movie["id"], 
-        movie["title"], 
-        movie["year"]
-        ))
-        connection.commit()
-        connection.close()
-
-        messagebox.showinfo("Success", f"{movie['title']} has been added to your favorites!")
-
-    except sqlite3.IntegrityError:
-        messagebox.showerror("Error", "This movie is already in your favorites.")
-
 
 
 # Registration page buttons
@@ -287,6 +240,63 @@ continue_button.pack(fill="x", ipady=8)
 # -----------------------------
 # SEARCH PAGE
 # -----------------------------
+
+def add_to_favorites():
+    global current_user_id
+
+    if current_user_id is None:
+        messagebox.showerror("Error", "You must be logged in to add favorites.")
+        return
+
+    selected_index = search_results.curselection()
+
+    if not selected_index:
+        messagebox.showerror("Error", "Please select a movie to add to favorites.")
+        return
+
+    selected_index = selected_index[0]
+    movie = search_results_data[selected_index]
+
+    try:
+        with sqlite3.connect("users.db", timeout=10) as connection:
+            cursor = connection.cursor()
+            cursor.execute("""
+                INSERT INTO favorites (user_id, movie_id, movie_title, movie_year)
+                VALUES (?, ?, ?, ?)
+            """, (
+                current_user_id,
+                movie["id"],
+                movie["title"],
+                movie["year"]
+            ))
+
+        messagebox.showinfo("Success", f"{movie['title']} has been added to your favorites!")
+        load_favorites()
+
+    except sqlite3.IntegrityError:
+        messagebox.showerror("Error", "This movie is already in your favorites.")
+
+
+def load_favorites():
+    global current_user_id
+
+    favorites_list.delete(0, tk.END)
+
+    if current_user_id is None:
+        return
+
+    with sqlite3.connect("users.db", timeout=10) as connection:
+        cursor = connection.cursor()
+        cursor.execute(
+            "SELECT movie_title, movie_year FROM favorites WHERE user_id = ?",
+            (current_user_id,)
+        )
+        rows = cursor.fetchall()
+
+    for title, year in rows:
+        favorites_list.insert(tk.END, f"{title} ({year})")
+
+
 
 # Main frame for the search page
 search_page = ttk.Frame(root, padding=25)
@@ -397,6 +407,26 @@ favorites_button = ttk.Button(
 )
 favorites_button.pack(side="left", padx=(10, 0), ipady=6)
 
+favorites_label = ttk.Label(
+    results_card,
+    text="Your Favorites:",
+    font=("Helvetica", 14, "bold")
+)
+favorites_label.pack(anchor="w", pady=(15, 8))
+
+favorites_list = tk.Listbox(
+    results_card,
+    font=("Helvetica", 14),
+    height=8,
+    bg="#2b2b2b",
+    fg="white",
+    selectbackground="#4a90e2",
+    selectforeground="white",
+    relief="flat",
+    highlightthickness=0
+)
+favorites_list.pack(fill="both", expand=True, pady=(0, 10))
+
 
 #Keystroke search function, 
 search_delay = None                                  #Initialize to 0
@@ -445,7 +475,7 @@ registration_page.pack(fill="both", expand=True)
 
 
 #Set up database before starting the app
-setup_database()
+initialize_database()
 
 # Start the Tkinter event loop
 root.mainloop()
