@@ -44,15 +44,27 @@ sv_ttk.set_theme("dark")
 # -----------------------------
 
 def show_registration_page():
-    """Hide the search page and show the registration page."""
     search_page.pack_forget()
+    login_page.pack_forget()
     registration_page.pack(fill="both", expand=True)
 
 
 def show_search_page():
-    """Hide the registration page and show the search page."""
     registration_page.pack_forget()
+    login_page.pack_forget()
     search_page.pack(fill="both", expand=True)
+
+
+def show_login_page():
+    registration_page.pack_forget()
+    search_page.pack_forget()
+    login_page.pack(fill="both", expand=True)
+
+def logout_user():
+    global current_user_id
+    current_user_id = None
+    favorites_list.delete(0, tk.END)
+    show_login_page()
 
 
 # -----------------------------
@@ -83,6 +95,105 @@ def initialize_database():
                 FOREIGN KEY (user_id) REFERENCES users(id)
             )
         """)
+
+# -----------------------------
+# LOGIN PAGE
+# -----------------------------
+
+login_page = ttk.Frame(root, padding=20)
+
+login_wrapper = ttk.Frame(login_page)
+login_wrapper.pack(fill="both", expand=True)
+
+login_card = ttk.Frame(login_wrapper, padding=30)
+login_card.place(relx=0.5, rely=0.5, anchor="center")
+
+login_title = ttk.Label(
+    login_card,
+    text="Welcome Back",
+    font=("Helvetica", 24, "bold")
+)
+login_title.pack(pady=(0, 10))
+
+login_subtitle = ttk.Label(
+    login_card,
+    text="Log in to access your movie app",
+    font=("Helvetica", 12)
+)
+login_subtitle.pack(pady=(0, 20))
+
+login_form_frame = ttk.Frame(login_card)
+login_form_frame.pack(fill="x")
+
+login_username_label = ttk.Label(
+    login_form_frame,
+    text="Username:",
+    font=("Helvetica", 12)
+)
+login_username_label.pack(anchor="w", pady=(5, 5))
+
+login_username_entry = ttk.Entry(
+    login_form_frame,
+    font=("Helvetica", 12),
+    width=35
+)
+login_username_entry.pack(fill="x", ipady=6)
+
+login_password_label = ttk.Label(
+    login_form_frame,
+    text="Password:",
+    font=("Helvetica", 12)
+)
+login_password_label.pack(anchor="w", pady=(15, 5))
+
+login_password_entry = ttk.Entry(
+    login_form_frame,
+    font=("Helvetica", 12),
+    width=35,
+    show="*"
+)
+login_password_entry.pack(fill="x", ipady=6, pady=(0, 20))
+
+def login_user():
+    global current_user_id
+
+    username = login_username_entry.get().strip()
+    password = login_password_entry.get().strip()
+
+    if not username or not password:
+        messagebox.showerror("Error", "Please enter both username and password.")
+        return
+
+    with sqlite3.connect("users.db", timeout=10) as connection:
+        cursor = connection.cursor()
+        cursor.execute(
+            "SELECT id FROM users WHERE username = ? AND password = ?",
+            (username, password)
+        )
+        user = cursor.fetchone()
+
+    if user:
+        current_user_id = user[0]
+        messagebox.showinfo("Success", f"Welcome back, {username}!")
+        load_favorites()
+        show_search_page()
+    else:
+        messagebox.showerror("Error", "Invalid username or password.")
+
+login_button = ttk.Button(
+    login_card,
+    text="Login",
+    command=login_user
+)
+login_button.pack(fill="x", ipady=8, pady=(0, 10))
+
+go_to_register_button = ttk.Button(
+    login_card,
+    text="Create Account",
+    command=show_registration_page
+)
+go_to_register_button.pack(fill="x", ipady=8)
+
         
 # -----------------------------
 # REGISTRATION PAGE
@@ -232,6 +343,14 @@ register_button = ttk.Button(
 )
 register_button.pack(fill="x", ipady=8, pady=(0, 10))
 
+back_to_login_button = ttk.Button(
+    reg_card,
+    text="Back to Login",
+    command=show_login_page
+)
+back_to_login_button.pack(fill="x", ipady=8, pady=(0, 10))
+
+
 continue_button = ttk.Button(
     reg_card,
     text="Continue to App",
@@ -354,6 +473,14 @@ search_button = ttk.Button(
     command=lambda: sample_search()
 )
 search_button.pack(side="left", padx=(10, 0), ipady=6)
+
+logout_button = ttk.Button(
+    search_row,
+    text="Logout",
+    command=logout_user
+)
+logout_button.pack(side="left", padx=(10, 0), ipady=6)
+
 
 # Back button
 back_button = ttk.Button(
@@ -621,4 +748,5 @@ registration_page.pack(fill="both", expand=True)
 initialize_database()
 
 # Start the Tkinter event loop
+show_login_page()
 root.mainloop()
