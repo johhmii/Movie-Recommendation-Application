@@ -46,6 +46,7 @@ sv_ttk.set_theme("dark")
 def show_registration_page():
     search_page.pack_forget()
     login_page.pack_forget()
+    clear_login_fields()
     registration_page.pack(fill="both", expand=True)
 
 
@@ -58,6 +59,7 @@ def show_search_page():
 def show_login_page():
     registration_page.pack_forget()
     search_page.pack_forget()
+    clear_registration_fields()
     login_page.pack(fill="both", expand=True)
 
 def logout_user():
@@ -65,6 +67,22 @@ def logout_user():
     current_user_id = None
     favorites_list.delete(0, tk.END)
     show_login_page()
+
+
+# -----------------------------
+# CLEAR FIELDS FUNCTIONS
+# -----------------------------
+
+
+def clear_login_fields():
+    login_username_entry.delete(0, tk.END)
+    login_password_entry.delete(0, tk.END)
+
+def clear_registration_fields():
+    username_entry.delete(0, tk.END)
+    password_entry.delete(0, tk.END)
+    confirm_password_entry.delete(0, tk.END)
+    email_entry.delete(0, tk.END)
 
 
 # -----------------------------
@@ -175,6 +193,7 @@ def login_user():
     if user:
         current_user_id = user[0]
         messagebox.showinfo("Success", f"Welcome back, {username}!")
+        clear_login_fields()
         load_favorites()
         show_search_page()
     else:
