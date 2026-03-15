@@ -16,14 +16,24 @@ Group 7's submission for Computer Science 362 , Section ?
 * Name: Eric Luu
 * Email: 
 
+# Before you Run
+
+1.) Make sure you have Python 3.14 installed on your device from https://www.python.org/downloads/
+2.) Once you have python installed on your console, download the following packages in your terminal.
+```
+
+py -m pip install requests pillow sv-ttk
+```
+3.)Download the repository from github and place it in a destination of your choosing
+
+
 # How to Run
 
-0.) Make sure you have tkinter and requests installed for python3.  
-1.) Put both files in same folder in location of your choosing.  
-2.) cd into that file from terminal.  
-3.) Run python demo.py.  
+1.) Put both repository in same folder in location of your choosing.  
+2.) Cd into that file from terminal.  
+3.) Run python main.py.  
 
-Example: main.py and wrapper.py are in file movie_app in path /Documents/movie_app
+Example: Repository is located in file movie_app in path /Documents/movie_app
 ```
 cd Documents/movie_app
 python3 main.py
