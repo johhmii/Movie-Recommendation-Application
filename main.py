@@ -8,10 +8,13 @@
 
 import sqlite3 #Python's built in database, Sufficient for our needs and easy to set up, no external dependencies required
 import tkinter as tk
-from tkinter import ttk, messagebox
-from wrapper import search_movies, get_movie
 import requests
 import sv_ttk
+
+from tkinter import ttk, messagebox
+from wrapper import search_movies, get_movie
+from PIL import Image, ImageTk
+from io import BytesIO
 
 current_user_id = None  # Global variable to store the currently logged-in user's information
 search_result_data = []  # Global variable to store the data of the movies currently displayed in the search results
@@ -465,6 +468,155 @@ def sample_search():
             "year": year
         })
 
+def show_movie_details(events = None):
+    selected_index = search_results.curselection()
+
+    if not selected_index:
+        return
+
+    selected_index = selected_index[0]
+    movie = search_results_data[selected_index]
+
+    details = get_movie(movie["id"])
+
+    if details is None:
+        messagebox.showerror("Error", "Failed to retrieve movie details.")
+        return
+    
+    #create popup with movie details, including title, release year, overview, and rating
+    details_window = tk.Toplevel(root)
+    details_window.title(details.get("title", "Movie Details"))
+    details_window.geometry("700x600")
+    details_window.minsize(600, 500)
+
+    #main container
+    container = ttk.Frame(details_window, padding=20)
+    container.pack(fill="both", expand=True)
+
+    #top section for poster and basic info
+    top_frame = ttk.Frame(container)
+    top_frame.pack(fill="x", pady=(0, 15))
+
+    #poster label 
+    poster_label = ttk.Label(top_frame)
+    poster_label.pack(side="left", padx=(0, 20))
+
+    #right side info
+    info_frame = ttk.Frame(top_frame)
+    info_frame.pack(side="left", fill="both", expand=True)
+
+    #title label
+    ttk.Label(
+        info_frame,
+        text=details.get("title", "Unknown"),
+        font=("Helvetica", 20, "bold")
+    ).pack(anchor="w", pady = (0, 10))
+
+    #basic details
+    release_date = details.get("release_date", "Unknown")
+    rating = details.get("vote_average", "N/A")
+    runtime = details.get("runtime", "Unknown")
+
+    genres = details.get("genres", [])
+    genre_names = ", ".join(g["name"] for g in genres) if genres else "Unknown"
+
+    ttk.Label(
+        info_frame,
+        text=f"Release Date: {release_date}",
+        font=("Helvetica", 11)
+    ).pack(anchor="w", pady = 2)
+
+    ttk.Label(
+        info_frame,
+        text=f"Rating: {rating}",
+        font=("Helvetica", 11)
+    ).pack(anchor="w", pady = 2)
+
+    ttk.Label(
+        info_frame,
+        text=f"Runtime: {runtime} minutes",
+        font=("Helvetica", 11)
+    ).pack(anchor="w", pady = 2)
+
+    ttk.Label(
+        info_frame,
+        text=f"Genres: {genre_names}",
+        font=("Helvetica", 11)
+    ).pack(anchor="w", pady = 2)
+
+    ttk.Label(
+        container,
+        text = "Synopsis",
+        font = ("Helvetica", 14, "bold")
+    ).pack(anchor="w", pady=(10, 5))
+
+    overview_text = tk.Text(
+        container,
+        font=("Helvetica", 11),
+        wrap="word",
+        height=8,
+        bg="#2b2b2b",
+        fg="white",
+        relief="flat",
+    )
+    overview_text.pack(fill = "x", pady = (0, 15))
+
+    overview = details.get("overview", "No synopsis available.")
+    overview_text.insert("1,0", overview)
+    overview_text.config(state="disabled")
+
+    #actors section
+
+    cast_names = "Unknown"
+    if "credits" in details and "cast" in details:
+        cast_list = details["credits"]["cast"][:5]  # Get top 5 cast members
+        cast_names = ", ".join(actor["name"] for actor in cast_list) if cast_list else "Unknown"
+
+    ttk.Label(
+        container,
+        text=f"Top Cast:",
+        font=("Helvetica", 14, "bold")
+    ).pack(anchor="w", pady = (5, 5))
+
+    ttk.Label(
+        container,
+        text=cast_names,
+        font=("Helvetica", 11),
+        wraplength = 620,
+        justify = "left",
+    ).pack(anchor="w", pady = (0, 15))
+
+    #load poster image
+
+    poster_path = details.get("poster_path")
+    if poster_path:
+        poster_url = f"https://image.tmdb.org/t/p/w500{poster_path}"
+        try:
+            response = requests.get(poster_url, timeout=10)
+            image_data = imaage.open(BytesIO(response.content))
+            image_data = image_data.resize((200, 300))
+            poster_image = ImageTk.PhotoImage(image_data)
+
+            poster_label.config(image=poster_image)
+            poster_label.image = poster_image  # Keep a reference to prevent garbage collection
+
+        except Exception:
+            poster_label.config(text = "Poster not Available")
+    
+    else:
+        poster_label.config(text = "Poster not Available")
+
+
+    title = details.get("title", "Unknown")
+    year = details.get("release_date", "")[:4]
+    overview = details.get("overview", "No overview available.")
+    rating = details.get("vote_average", "N/A")
+
+    detail_message = f"Title: {title}\nYear: {year}\nRating: {rating}\n\nOverview:\n{overview}"
+    messagebox.showinfo("Movie Details", detail_message)
+
+#show movie details on double click
+search_results.bind("<Double-Button-1>", show_movie_details)
 
 # -----------------------------
 # START APP
