@@ -18,7 +18,7 @@ Group 7's submission for Computer Science 362 , Section ?
 
 # Before you Run
 
-1.) Make sure you have Python 3.14 installed on your device from https://www.python.org/downloads/.
+1.) Make sure you have Python 3.14 installed on your device from https://www.python.org/downloads/   
 2.) Once you have python installed on your console, download the following packages in your terminal.
 ```console
 py -m pip install requests pillow sv-ttk
