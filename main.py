@@ -17,7 +17,7 @@ from PIL import Image, ImageTk
 from io import BytesIO
 
 current_user_id = None  # Global variable to store the currently logged-in user's information
-search_result_data = []  # Global variable to store the data of the movies currently displayed in the search results
+search_results_data = []  # Global variable to store the data of the movies currently displayed in the search results
 
 # -----------------------------
 # MAIN WINDOW SETUP
@@ -562,7 +562,7 @@ def show_movie_details(events = None):
     overview_text.pack(fill = "x", pady = (0, 15))
 
     overview = details.get("overview", "No synopsis available.")
-    overview_text.insert("1,0", overview)
+    overview_text.insert("1.0", overview)
     overview_text.config(state="disabled")
 
     #actors section
@@ -593,7 +593,7 @@ def show_movie_details(events = None):
         poster_url = f"https://image.tmdb.org/t/p/w500{poster_path}"
         try:
             response = requests.get(poster_url, timeout=10)
-            image_data = imaage.open(BytesIO(response.content))
+            image_data = Image.open(BytesIO(response.content))
             image_data = image_data.resize((200, 300))
             poster_image = ImageTk.PhotoImage(image_data)
 
@@ -605,15 +605,6 @@ def show_movie_details(events = None):
     
     else:
         poster_label.config(text = "Poster not Available")
-
-
-    title = details.get("title", "Unknown")
-    year = details.get("release_date", "")[:4]
-    overview = details.get("overview", "No overview available.")
-    rating = details.get("vote_average", "N/A")
-
-    detail_message = f"Title: {title}\nYear: {year}\nRating: {rating}\n\nOverview:\n{overview}"
-    messagebox.showinfo("Movie Details", detail_message)
 
 #show movie details on double click
 search_results.bind("<Double-Button-1>", show_movie_details)
