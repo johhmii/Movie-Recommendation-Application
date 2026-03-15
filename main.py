@@ -18,6 +18,7 @@ from io import BytesIO
 
 current_user_id = None  # Global variable to store the currently logged-in user's information
 search_results_data = []  # Global variable to store the data of the movies currently displayed in the search results
+favorites_data = []  # Global variable to store the data of the movies currently in the user's favorites list
 
 # -----------------------------
 # MAIN WINDOW SETUP
@@ -419,9 +420,10 @@ def add_to_favorites():
 
 
 def load_favorites():
-    global current_user_id
+    global current_user_id, favorites_data
 
     favorites_list.delete(0, tk.END)
+    favorites_data = []  # Clear previous favorites data
 
     if current_user_id is None:
         return
@@ -429,15 +431,44 @@ def load_favorites():
     with sqlite3.connect("users.db", timeout=10) as connection:
         cursor = connection.cursor()
         cursor.execute(
-            "SELECT movie_title, movie_year FROM favorites WHERE user_id = ?",
+            "SELECT id, movie_title, movie_year FROM favorites WHERE user_id = ?",
             (current_user_id,)
         )
         rows = cursor.fetchall()
 
-    for title, year in rows:
+    for favorite_id, title, year in rows:
         favorites_list.insert(tk.END, f"{title} ({year})")
+        favorites_data.append({
+            "id": favorite_id,
+            "title": title,
+            "year": year
+        })  
 
+def remove_from_favorites():
+    global current_user_id, favorites_data
 
+    if current_user_id is None:
+        messagebox.showerror("Error", "You must be logged in.")
+        return
+
+    selected_index = favorites_list.curselection()
+
+    if not selected_index:
+        messagebox.showerror("Error", "Please select a favorite movie to remove.")
+        return
+
+    selected_index = selected_index[0]
+    favorite = favorites_data[selected_index]
+
+    with sqlite3.connect("users.db", timeout=10) as connection:
+        cursor = connection.cursor()
+        cursor.execute("""
+            DELETE FROM favorites
+            WHERE id = ? AND user_id = ?
+        """, (favorite["favorite_id"], current_user_id))
+
+    messagebox.showinfo("Success", f"Removed '{favorite['title']}' from favorites.")
+    load_favorites()
 
 # Main frame for the search page
 search_page = ttk.Frame(root, padding=25)
@@ -555,6 +586,14 @@ favorites_button = ttk.Button(
     command = add_to_favorites
 )
 favorites_button.pack(side="left", padx=(10, 0), ipady=6)
+
+# remove from favorites button
+remove_favorite_button = ttk.Button(
+    search_row,
+    text="Remove Favorite",
+    command=remove_from_favorites
+)
+remove_favorite_button.pack(side="left", padx=(10, 0), ipady=6)
 
 favorites_label = ttk.Label(
     results_card,
