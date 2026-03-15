@@ -465,9 +465,10 @@ def remove_from_favorites():
         cursor.execute("""
             DELETE FROM favorites
             WHERE id = ? AND user_id = ?
-        """, (favorite["favorite_id"], current_user_id))
+        """, (favorite["id"], current_user_id))
 
     messagebox.showinfo("Success", f"Removed '{favorite['title']}' from favorites.")
+
     load_favorites()
 
 # Main frame for the search page
@@ -626,7 +627,6 @@ def on_keyrelease(event):                            #Function runs after each k
 search_bar.bind("<KeyRelease>", on_keyrelease)       #Bind function to searchbar
 
 #TEMP SAMPLE SEARCH FUNCTION
-search_results_data = []; 
 
 def sample_search():
     global search_results_data
@@ -797,10 +797,6 @@ search_results.bind("<Double-Button-1>", show_movie_details)
 # -----------------------------
 # START APP
 # -----------------------------
-
-# Start on the registration page
-registration_page.pack(fill="both", expand=True)
-
 
 #Set up database before starting the app
 initialize_database()
