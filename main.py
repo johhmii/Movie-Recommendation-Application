@@ -12,14 +12,14 @@ import requests
 import sv_ttk
 
 from tkinter import ttk, messagebox
-from wrapper import search_movies, get_movie, get_genres, search_movies_genre_filter
+from wrapper import search_movies, get_movie, get_genres
 from PIL import Image, ImageTk
 from io import BytesIO
 
 current_user_id = None  # Global variable to store the currently logged-in user's information
 search_results_data = []  # Global variable to store the data of the movies currently displayed in the search results
 favorites_data = []  # Global variable to store the data of the movies currently in the user's favorites list
-all_genres = get_genres()
+all_genres = get_genres() #Global variable that initializes genres
 # -----------------------------
 # MAIN WINDOW SETUP
 # -----------------------------
@@ -518,14 +518,6 @@ search_bar = ttk.Entry(
 )
 search_bar.pack(side="left", fill="x", expand=True, ipady=6)
 
-#Genre Filter Button
-genre_button = ttk.Button(
-    search_row,
-    text="Filter by Genre", 
-    command=lambda: filter_by_genre()
-)
-genre_button.pack(side="left", padx=(10, 0), ipady=6)
-
 #Genre Dropdown
 genre_var = tk.StringVar(value="All")
 genre_names = ["All"] + [g["name"] for g in all_genres]
@@ -537,7 +529,7 @@ genre_dropdown = ttk.Combobox(
     width=15
 )
 genre_dropdown.pack(side = "left", padx=(10,0), ipady=6)
-
+genre_dropdown.bind("<<ComboboxSelected>>", lambda event: sample_search())
 # Optional manual search button
 search_button = ttk.Button(
     search_row,
@@ -648,8 +640,6 @@ def on_keyrelease(event):                            #Function runs after each k
 search_bar.bind("<KeyRelease>", on_keyrelease)       #Bind function to searchbar
 
 #TEMP SAMPLE SEARCH FUNCTION
-def filter_by_genre():
-    sample_search()
 
 def sample_search():
     global search_results_data

@@ -31,7 +31,4 @@ def get_genres():
     genres = response.json().get("genres", [])
     return genres
 
-def search_movies_genre_filter(genre_id):
-    url = BASE_URL + "/discover/movie"
-    response = requests.get(url, params = {"api_key": API_KEY, "with_genres": genre_id})
-    return response.json().get("results", [])
+
