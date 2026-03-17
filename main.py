@@ -12,14 +12,14 @@ import requests
 import sv_ttk
 
 from tkinter import ttk, messagebox
-from wrapper import search_movies, get_movie
+from wrapper import search_movies, get_movie, get_genres, search_movies_genre_filter
 from PIL import Image, ImageTk
 from io import BytesIO
 
 current_user_id = None  # Global variable to store the currently logged-in user's information
 search_results_data = []  # Global variable to store the data of the movies currently displayed in the search results
 favorites_data = []  # Global variable to store the data of the movies currently in the user's favorites list
-
+all_genres = get_genres()
 # -----------------------------
 # MAIN WINDOW SETUP
 # -----------------------------
@@ -471,6 +471,7 @@ def remove_from_favorites():
 
     load_favorites()
 
+
 # Main frame for the search page
 search_page = ttk.Frame(root, padding=25)
 
@@ -516,6 +517,26 @@ search_bar = ttk.Entry(
     font=("Helvetica", 14)
 )
 search_bar.pack(side="left", fill="x", expand=True, ipady=6)
+
+#Genre Filter Button
+genre_button = ttk.Button(
+    search_row,
+    text="Filter by Genre", 
+    command=lambda: filter_by_genre()
+)
+genre_button.pack(side="left", padx=(10, 0), ipady=6)
+
+#Genre Dropdown
+genre_var = tk.StringVar(value="All")
+genre_names = ["All"] + [g["name"] for g in all_genres]
+genre_dropdown = ttk.Combobox(
+    search_row,
+    textvariable=genre_var,
+    values=genre_names,
+    state="readonly",
+    width=15
+)
+genre_dropdown.pack(side = "left", padx=(10,0), ipady=6)
 
 # Optional manual search button
 search_button = ttk.Button(
@@ -627,21 +648,37 @@ def on_keyrelease(event):                            #Function runs after each k
 search_bar.bind("<KeyRelease>", on_keyrelease)       #Bind function to searchbar
 
 #TEMP SAMPLE SEARCH FUNCTION
+def filter_by_genre():
+    sample_search()
 
 def sample_search():
     global search_results_data
 
     query = search_bar.get().strip()
     search_results.delete(0, tk.END)
-    search_results_data = []  # Clear previous search results data
+    search_results_data = []
 
     movies = search_movies(query)
 
     if not movies:
-            search_results.insert(tk.END, "No results.")
-            return
-    
+        search_results.insert(tk.END, "No results.")
+        return
+
+    # Get the selected genre id if one is selected
+    selected_name = genre_var.get()
+    selected_genre_id = None
+    if selected_name != "All":
+        for g in all_genres:
+            if g["name"] == selected_name:
+                selected_genre_id = g["id"]
+                break
+
     for movie in movies:
+        # If a genre is selected, skip movies that don't match
+        if selected_genre_id is not None:
+            if selected_genre_id not in movie.get("genre_ids", []):
+                continue
+
         title = movie.get("title", "Unknown")
         year = movie.get("release_date", "")[:4]
         movie_id = movie.get("id", "")
@@ -652,6 +689,9 @@ def sample_search():
             "title": title,
             "year": year
         })
+
+    if not search_results_data:
+        search_results.insert(tk.END, "No results for that genre.")
 
 def show_movie_details(events = None):
     selected_index = search_results.curselection()
