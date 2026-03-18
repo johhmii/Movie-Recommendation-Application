@@ -1,9 +1,9 @@
 
 # Movie Recommendation App
 
-Group 7's submission for Computer Science 362 , Section ?
+Group 6's submission for Computer Science 362 , Section ?
 
-# Team 7's Information
+# Team 6's Information
 
 * Name: David Ulloa
 * Email: davidulloamontesinos@csu.fullerton.edu
