@@ -31,4 +31,41 @@ def get_genres():
     genres = response.json().get("genres", [])
     return genres
 
+# Takes movie ID and returns recommended movies
+def get_recommendations(movie_id):
+    url = BASE_URL + "/movie/" + str(movie_id) + "/recommendations"
+    response = requests.get(url, params = {"api_key": API_KEY})
+    return response.json().get("results", [])
 
+# Takes movie ID and returns similar movies
+def get_similar(movie_id):
+    url = BASE_URL + "/movie/" + str(movie_id) + "/similar"
+    response = requests.get(url, params = {"api_key": API_KEY})
+    return response.json().get("results", [])
+
+# Produces final recommendation mix of similar and recommended movies
+def get_final_recommendation(movie_id, favorite_ids=None):
+    recommendations = get_recommendations(movie_id)
+    similar = get_similar(movie_id)
+
+    seen_ids = set()
+    final = []
+
+    if favorite_ids:
+        seen_ids.update(favorite_ids)
+ 
+    i = 0
+
+    while i<max(len(recommendations), len(similar)) and len(final) <5:
+        if i<len(recommendations):
+            movie = recommendations[i]
+            if movie["id"] not in seen_ids:
+                seen_ids.add(movie["id"])
+                final.append(movie)
+        if i<len(similar):
+            movie = similar[i]
+            if movie["id"] not in seen_ids:
+                seen_ids.add(movie["id"])
+                final.append(movie)
+        i += 1
+    return final

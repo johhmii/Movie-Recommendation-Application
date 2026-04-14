@@ -10,11 +10,13 @@ import sqlite3 #Python's built in database, Sufficient for our needs and easy to
 import tkinter as tk
 import requests
 import sv_ttk
+import random
 
 from tkinter import ttk, messagebox
-from wrapper import search_movies, get_movie, get_genres
+from wrapper import search_movies, get_movie, get_genres, get_final_recommendation
 from PIL import Image, ImageTk
 from io import BytesIO
+from quotes import quotes
 
 current_user_id = None  # Global variable to store the currently logged-in user's information
 search_results_data = []  # Global variable to store the data of the movies currently displayed in the search results
@@ -412,7 +414,6 @@ def add_to_favorites():
                 movie["year"]
             ))
 
-        messagebox.showinfo("Success", f"{movie['title']} has been added to your favorites!")
         load_favorites()
 
     except sqlite3.IntegrityError:
@@ -467,7 +468,6 @@ def remove_from_favorites():
             WHERE id = ? AND user_id = ?
         """, (favorite["id"], current_user_id))
 
-    messagebox.showinfo("Success", f"Removed '{favorite['title']}' from favorites.")
 
     load_favorites()
 
@@ -487,13 +487,18 @@ search_title = ttk.Label(
 )
 search_title.pack(anchor="w")
 
-# Search page subtitle
-search_subtitle = ttk.Label(
+#Movie quotes
+quote_label = ttk.Label(
     header_frame,
-    text="Search for your favorite movies",
-    font=("Helvetica", 12)
+    text = random.choice(quotes),
+    font = ("Helvetica", 16)
 )
-search_subtitle.pack(anchor="w", pady=(5, 0))
+quote_label.pack(anchor="w", pady=(5,0))
+
+def rotate_quote():
+    quote_label.config(text = random.choice(quotes))
+    root.after(15000, rotate_quote)
+root.after(15000, rotate_quote)
 
 # Search card
 search_card = ttk.Frame(search_page, padding=20)
