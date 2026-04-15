@@ -33,7 +33,7 @@ root = tk.Tk()
 root.title("Movie Recommendation App")
 
 # Set the starting size of the window
-root.geometry("950x650")
+root.geometry("1100x800")
 
 # Prevent the window from becoming too small
 root.minsize(850, 550)
@@ -64,6 +64,17 @@ def show_login_page():
     search_page.pack_forget()
     clear_registration_fields()
     login_page.pack(fill="both", expand=True)
+
+def show_recommendations_page():
+    search_page.pack_forget()
+    login_page.pack_forget()
+    registration_page.pack_forget()
+    load_recommendation_posters()
+    recommendations_page.pack(fill="both", expand = True)
+
+def show_search_from_recommendations():
+    recommendations_page.pack_forget()
+    search_page.pack(fill = "both", expand = True)
 
 def logout_user():
     global current_user_id
@@ -131,15 +142,15 @@ login_card.place(relx=0.5, rely=0.5, anchor="center")
 
 login_title = ttk.Label(
     login_card,
-    text="Welcome Back",
-    font=("Helvetica", 24, "bold")
+    text="Welcome Back!",
+    font=("Segeo UI", 24, "bold")
 )
 login_title.pack(pady=(0, 10))
 
 login_subtitle = ttk.Label(
     login_card,
-    text="Log in to access your movie app",
-    font=("Helvetica", 12)
+    text="Your next favorite movie is waiting.",
+    font=("Segeo UI", 12)
 )
 login_subtitle.pack(pady=(0, 20))
 
@@ -149,13 +160,13 @@ login_form_frame.pack(fill="x")
 login_username_label = ttk.Label(
     login_form_frame,
     text="Username:",
-    font=("Helvetica", 12)
+    font=("Segeo UI", 12)
 )
 login_username_label.pack(anchor="w", pady=(5, 5))
 
 login_username_entry = ttk.Entry(
     login_form_frame,
-    font=("Helvetica", 12),
+    font=("Segeo UI", 12),
     width=35
 )
 login_username_entry.pack(fill="x", ipady=6)
@@ -163,13 +174,13 @@ login_username_entry.pack(fill="x", ipady=6)
 login_password_label = ttk.Label(
     login_form_frame,
     text="Password:",
-    font=("Helvetica", 12)
+    font=("Segeo UI", 12)
 )
 login_password_label.pack(anchor="w", pady=(15, 5))
 
 login_password_entry = ttk.Entry(
     login_form_frame,
-    font=("Helvetica", 12),
+    font=("Segeo UI", 12),
     width=35,
     show="*"
 )
@@ -236,7 +247,7 @@ reg_card.place(relx=0.5, rely=0.5, anchor="center")
 reg_title = ttk.Label(
     reg_card,
     text="Create Your Account",
-    font=("Helvetica", 24, "bold")
+    font=("Segeo UI", 24, "bold")
 )
 reg_title.pack(pady=(0, 10))
 
@@ -244,7 +255,7 @@ reg_title.pack(pady=(0, 10))
 reg_subtitle = ttk.Label(
     reg_card,
     text="Register Down Below",
-    font=("Helvetica", 12)
+    font=("Segeo UI", 12)
 )
 reg_subtitle.pack(pady=(0, 20))
 
@@ -256,14 +267,14 @@ form_frame.pack(fill="x")
 username_label = ttk.Label(
     form_frame,
     text="Username:",
-    font=("Helvetica", 12)
+    font=("Segeo UI", 12)
 )
 username_label.pack(anchor="w", pady=(5, 5))
 
 # Username entry
 username_entry = ttk.Entry(
     form_frame,
-    font=("Helvetica", 12),
+    font=("Segeo UI", 12),
     width=35
 )
 username_entry.pack(fill="x", ipady=6)
@@ -272,14 +283,14 @@ username_entry.pack(fill="x", ipady=6)
 password_label = ttk.Label(
     form_frame,
     text="Password:",
-    font=("Helvetica", 12)
+    font=("Segeo UI", 12)
 )
 password_label.pack(anchor="w", pady=(15, 5))
 
 # Password entry
 password_entry = ttk.Entry(
     form_frame,
-    font=("Helvetica", 12),
+    font=("Segeo UI", 12),
     width=35,
     show="*"
 )
@@ -289,14 +300,14 @@ password_entry.pack(fill="x", ipady=6)
 confirm_password_label = ttk.Label(
     form_frame,
     text="Confirm Password:",
-    font=("Helvetica", 12)
+    font=("Segeo UI", 12)
 )
 confirm_password_label.pack(anchor="w", pady=(15, 5))
 
 # Confirm password entry
 confirm_password_entry = ttk.Entry(
     form_frame,
-    font=("Helvetica", 12),
+    font=("Segeo UI", 12),
     width=35,
     show="*"
 )
@@ -306,14 +317,14 @@ confirm_password_entry.pack(fill="x", ipady=6)
 email_label = ttk.Label(
     form_frame,
     text="Email:",
-    font=("Helvetica", 12)
+    font=("Segeo UI", 12)
 )
 email_label.pack(anchor="w", pady=(15, 5))
 
 # Email entry
 email_entry = ttk.Entry(
     form_frame,
-    font=("Helvetica", 12),
+    font=("Segeo UI", 12),
     width=35
 )
 email_entry.pack(fill="x", ipady=6, pady=(0, 20))
@@ -432,15 +443,16 @@ def load_favorites():
     with sqlite3.connect("users.db", timeout=10) as connection:
         cursor = connection.cursor()
         cursor.execute(
-            "SELECT id, movie_title, movie_year FROM favorites WHERE user_id = ?",
+            "SELECT id, movie_id, movie_title, movie_year FROM favorites WHERE user_id = ?",
             (current_user_id,)
         )
         rows = cursor.fetchall()
 
-    for favorite_id, title, year in rows:
+    for favorite_id, movie_id, title, year in rows:
         favorites_list.insert(tk.END, f"{title} ({year})")
         favorites_data.append({
             "id": favorite_id,
+            "movie_id": movie_id,
             "title": title,
             "year": year
         })  
@@ -483,7 +495,7 @@ header_frame.pack(fill="x", pady=(0, 20))
 search_title = ttk.Label(
     header_frame,
     text="Movie Recommendation App",
-    font=("Helvetica", 24, "bold")
+    font=("Segeo UI", 24, "bold")
 )
 search_title.pack(anchor="w")
 
@@ -491,7 +503,7 @@ search_title.pack(anchor="w")
 quote_label = ttk.Label(
     header_frame,
     text = random.choice(quotes),
-    font = ("Helvetica", 16)
+    font = ("Segeo UI", 16)
 )
 quote_label.pack(anchor="w", pady=(5,0))
 
@@ -508,7 +520,7 @@ search_card.pack(fill="x", pady=(0, 18))
 search_label = ttk.Label(
     search_card,
     text="Search",
-    font=("Helvetica", 14, "bold")
+    font=("Segeo UI", 14, "bold")
 )
 search_label.pack(anchor="w", pady=(0, 12))
 
@@ -519,45 +531,41 @@ search_row.pack(fill="x")
 # Search bar
 search_bar = ttk.Entry(
     search_row,
-    font=("Helvetica", 14)
+    font=("Segeo UI", 14)
 )
 search_bar.pack(side="left", fill="x", expand=True, ipady=6)
 
-#Genre Dropdown
-genre_var = tk.StringVar(value="All")
-genre_names = ["All"] + [g["name"] for g in all_genres]
-genre_dropdown = ttk.Combobox(
+# Add to Favorites button
+favorites_button = ttk.Button(
     search_row,
-    textvariable=genre_var,
-    values=genre_names,
-    state="readonly",
-    width=15
+    text="Add to Favorites",
+    command=add_to_favorites
 )
-genre_dropdown.pack(side = "left", padx=(10,0), ipady=6)
-genre_dropdown.bind("<<ComboboxSelected>>", lambda event: sample_search())
-# Optional manual search button
-search_button = ttk.Button(
-    search_row,
-    text="Search",
-    command=lambda: sample_search()
-)
-search_button.pack(side="left", padx=(10, 0), ipady=6)
+favorites_button.pack(side="left", padx=(10, 0), ipady=6)
 
+# Remove Favorite button
+remove_favorite_button = ttk.Button(
+    search_row,
+    text="Remove Favorite",
+    command=remove_from_favorites
+)
+remove_favorite_button.pack(side="left", padx=(10, 0), ipady=6)
+
+# Get Recommendations button
+recommendations_button = ttk.Button(
+    search_row,
+    text="Get Recs!",
+    command=show_recommendations_page
+)
+recommendations_button.pack(side="left", padx=(10, 0), ipady=6)
+
+# Logout button
 logout_button = ttk.Button(
     search_row,
     text="Logout",
     command=logout_user
 )
 logout_button.pack(side="left", padx=(10, 0), ipady=6)
-
-
-# Back button
-back_button = ttk.Button(
-    search_row,
-    text="Back to Registration",
-    command=show_registration_page
-)
-back_button.pack(side="left", padx=(10, 0), ipady=6)
 
 # Results card
 results_card = ttk.Frame(search_page, padding=20)
@@ -567,7 +575,7 @@ results_card.pack(fill="both", expand=True)
 results_label = ttk.Label(
     results_card,
     text="Search Results:",
-    font=("Helvetica", 14, "bold")
+    font=("Segeo UI", 14, "bold")
 )
 results_label.pack(anchor="w", pady=(0, 12))
 
@@ -583,7 +591,7 @@ scrollbar.pack(side="right", fill="y")
 # This stays as tk.Listbox because ttk does not provide a Listbox widget
 search_results = tk.Listbox(
     listbox_frame,
-    font=("Helvetica", 14),
+    font=("Segeo UI", 14),
     height=12,
     bg="#2b2b2b",
     fg="white",
@@ -598,32 +606,17 @@ search_results.pack(fill="both", expand=True)
 # Connect scrollbar to listbox
 scrollbar.config(command=search_results.yview)
 
-# Add to Favorites button
-favorites_button = ttk.Button(
-    search_row,
-    text="Add to Favorites",
-    command = add_to_favorites
-)
-favorites_button.pack(side="left", padx=(10, 0), ipady=6)
-
-# remove from favorites button
-remove_favorite_button = ttk.Button(
-    search_row,
-    text="Remove Favorite",
-    command=remove_from_favorites
-)
-remove_favorite_button.pack(side="left", padx=(10, 0), ipady=6)
 
 favorites_label = ttk.Label(
     results_card,
     text="Your Favorites:",
-    font=("Helvetica", 14, "bold")
+    font=("Segeo UI", 14, "bold")
 )
 favorites_label.pack(anchor="w", pady=(15, 8))
 
 favorites_list = tk.Listbox(
     results_card,
-    font=("Helvetica", 14),
+    font=("Segeo UI", 14),
     height=8,
     bg="#2b2b2b",
     fg="white",
@@ -659,21 +652,7 @@ def sample_search():
         search_results.insert(tk.END, "No results.")
         return
 
-    # Get the selected genre id if one is selected
-    selected_name = genre_var.get()
-    selected_genre_id = None
-    if selected_name != "All":
-        for g in all_genres:
-            if g["name"] == selected_name:
-                selected_genre_id = g["id"]
-                break
-
     for movie in movies:
-        # If a genre is selected, skip movies that don't match
-        if selected_genre_id is not None:
-            if selected_genre_id not in movie.get("genre_ids", []):
-                continue
-
         title = movie.get("title", "Unknown")
         year = movie.get("release_date", "")[:4]
         movie_id = movie.get("id", "")
@@ -686,7 +665,7 @@ def sample_search():
         })
 
     if not search_results_data:
-        search_results.insert(tk.END, "No results for that genre.")
+        search_results.insert(tk.END, "No results.")
 
 def show_movie_details(events = None):
     selected_index = search_results.curselection()
@@ -729,7 +708,7 @@ def show_movie_details(events = None):
     ttk.Label(
         info_frame,
         text=details.get("title", "Unknown"),
-        font=("Helvetica", 20, "bold")
+        font=("Segeo UI", 20, "bold")
     ).pack(anchor="w", pady = (0, 10))
 
     #basic details
@@ -743,36 +722,36 @@ def show_movie_details(events = None):
     ttk.Label(
         info_frame,
         text=f"Release Date: {release_date}",
-        font=("Helvetica", 11)
+        font=("Segeo UI", 11)
     ).pack(anchor="w", pady = 2)
 
     ttk.Label(
         info_frame,
         text=f"Rating: {rating}",
-        font=("Helvetica", 11)
+        font=("Segeo UI", 11)
     ).pack(anchor="w", pady = 2)
 
     ttk.Label(
         info_frame,
         text=f"Runtime: {runtime} minutes",
-        font=("Helvetica", 11)
+        font=("Segeo UI", 11)
     ).pack(anchor="w", pady = 2)
 
     ttk.Label(
         info_frame,
         text=f"Genres: {genre_names}",
-        font=("Helvetica", 11)
+        font=("Segeo UI", 11)
     ).pack(anchor="w", pady = 2)
 
     ttk.Label(
         container,
         text = "Synopsis",
-        font = ("Helvetica", 14, "bold")
+        font = ("Segeo UI", 14, "bold")
     ).pack(anchor="w", pady=(10, 5))
 
     overview_text = tk.Text(
         container,
-        font=("Helvetica", 11),
+        font=("Segeo UI", 11),
         wrap="word",
         height=8,
         bg="#2b2b2b",
@@ -795,13 +774,13 @@ def show_movie_details(events = None):
     ttk.Label(
         container,
         text=f"Top Cast:",
-        font=("Helvetica", 14, "bold")
+        font=("Segeo UI", 14, "bold")
     ).pack(anchor="w", pady = (5, 5))
 
     ttk.Label(
         container,
         text=cast_names,
-        font=("Helvetica", 11),
+        font=("Segeo UI", 11),
         wraplength = 620,
         justify = "left",
     ).pack(anchor="w", pady = (0, 15))
@@ -828,6 +807,89 @@ def show_movie_details(events = None):
 
 #show movie details on double click
 search_results.bind("<Double-Button-1>", show_movie_details)
+
+# -----------------------------
+# RECOMMENDATIONS PAGE
+# -----------------------------
+
+recommendations_page = ttk.Frame(root, padding = 25)
+
+#Header
+rec_header_frame = ttk.Frame(recommendations_page)
+rec_header_frame.pack (fill = "x", pady=(0,20))
+
+rec_title = ttk.Label(
+    rec_header_frame,
+    text = "Your Recommendations",
+    font=("Segeo UI", 24, "bold")
+)
+rec_title.pack(anchor="w")
+
+#Back Button
+rec_back_button = ttk.Button(
+    recommendations_page,
+    text= "Back",
+    command = show_search_from_recommendations
+)
+rec_back_button.pack(anchor = "w", pady = (0,15))
+
+rec_grid_frame = ttk.Frame(recommendations_page, padding=10)
+rec_grid_frame.pack(fill="both", expand=True)
+
+poster_images = []
+
+def load_recommendation_posters():
+    global poster_images
+    poster_images = []
+
+    for widget in rec_grid_frame.winfo_children():
+        widget.destroy()
+
+    if not favorites_data:
+        ttk.Label(
+            rec_grid_frame,
+            text="Add movies to your favorites to get recommendations.",
+            font=("Helvetica", 12)
+        ).grid(row=0, column=0)
+        return
+
+    favorite_ids = [int(f["movie_id"]) for f in favorites_data]
+    recommended = get_final_recommendation(favorite_ids)
+
+    for index, movie in enumerate(recommended):
+        row = index // 5
+        col = index % 5
+
+        movie_frame = ttk.Frame(rec_grid_frame, padding=5)
+        movie_frame.grid(row=row, column=col, padx=10, pady=10)
+
+        poster_label = ttk.Label(movie_frame)
+        poster_label.pack()
+
+        title = movie.get("title", "Unknown")
+        year = movie.get("release_date", "")[:4]
+
+        ttk.Label(
+            movie_frame,
+            text=f"{title} ({year})",
+            font=("Helvetica", 9),
+            wraplength=100,
+            justify="center"
+        ).pack(pady=(5, 0))
+
+        poster_path = movie.get("poster_path")
+        if poster_path:
+            poster_url = f"https://image.tmdb.org/t/p/w200{poster_path}"
+            response = requests.get(poster_url, timeout=10)
+            image_data = Image.open(BytesIO(response.content))
+            image_data = image_data.resize((100, 150))
+            poster_image = ImageTk.PhotoImage(image_data)
+            poster_label.config(image=poster_image)
+            poster_label.image = poster_image
+            poster_images.append(poster_image)
+        else:
+            poster_label.config(text="No Poster")
+
 
 # -----------------------------
 # START APP

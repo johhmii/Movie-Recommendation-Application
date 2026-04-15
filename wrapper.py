@@ -37,35 +37,29 @@ def get_recommendations(movie_id):
     response = requests.get(url, params = {"api_key": API_KEY})
     return response.json().get("results", [])
 
-# Takes movie ID and returns similar movies
-def get_similar(movie_id):
-    url = BASE_URL + "/movie/" + str(movie_id) + "/similar"
-    response = requests.get(url, params = {"api_key": API_KEY})
-    return response.json().get("results", [])
 
 # Produces final recommendation mix of similar and recommended movies
-def get_final_recommendation(movie_id, favorite_ids=None):
-    recommendations = get_recommendations(movie_id)
-    similar = get_similar(movie_id)
-
+def get_final_recommendation(favorite_ids=None):
     seen_ids = set()
+    frequency = {}
+    popularity = {}
     final = []
 
     if favorite_ids:
         seen_ids.update(favorite_ids)
- 
-    i = 0
 
-    while i<max(len(recommendations), len(similar)) and len(final) <5:
-        if i<len(recommendations):
-            movie = recommendations[i]
+    for movie_id in (favorite_ids or []):
+        recommendations = get_recommendations(movie_id)
+
+        for movie in recommendations:
             if movie["id"] not in seen_ids:
                 seen_ids.add(movie["id"])
+                frequency[movie["id"]] = frequency.get(movie["id"], 0) + 1
+                popularity[movie["id"]] = movie.get("popularity", 0)
                 final.append(movie)
-        if i<len(similar):
-            movie = similar[i]
-            if movie["id"] not in seen_ids:
-                seen_ids.add(movie["id"])
-                final.append(movie)
-        i += 1
-    return final
+            else:
+                frequency[movie["id"]] = frequency.get(movie["id"], 0) + 1
+
+    final = [m for m in final if m.get("vote_average", 0) >= 6.0]
+    final.sort(key=lambda m: (frequency.get(m["id"], 0), popularity.get(m["id"], 0)), reverse=True)
+    return final[:10]
