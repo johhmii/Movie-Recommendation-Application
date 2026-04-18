@@ -123,10 +123,16 @@ def initialize_database():
                 movie_id TEXT NOT NULL,
                 movie_title TEXT NOT NULL,
                 movie_year TEXT,
+                rating INTEGER,
                 UNIQUE(user_id, movie_id),
                 FOREIGN KEY (user_id) REFERENCES users(id)
             )
         """)
+
+        try:
+            cursor.execute("ALTER TABLE favorites ADD COLUMN rating INTEGER")
+        except sqlite3.OperationalError:
+            pass  # Column already exists
 
 # -----------------------------
 # LOGIN PAGE
@@ -396,6 +402,46 @@ continue_button.pack(fill="x", ipady=8)
 # SEARCH PAGE
 # -----------------------------
 
+def get_rating_from_user(movie_title):
+    rating_result = [None]
+
+    dialog = tk.Toplevel(root)
+    dialog.title("Rate this Movie")
+    dialog.geometry("340x180")
+    dialog.resizable(False, False)
+    dialog.grab_set()
+
+    ttk.Label(
+        dialog,
+        text=f"Rate \"{movie_title}\"",
+        font=("Segeo UI", 13, "bold"),
+        wraplength=300,
+        justify="center"
+    ).pack(pady=(20, 5))
+
+    ttk.Label(dialog, text="Select a rating (1–10):", font=("Segeo UI", 11)).pack()
+
+    rating_var = tk.IntVar(value=7)
+    scale = ttk.Scale(dialog, from_=1, to=10, orient="horizontal", variable=rating_var, length=220)
+    scale.pack(pady=(8, 0))
+
+    scale_label = ttk.Label(dialog, text="7", font=("Segeo UI", 12, "bold"))
+    scale_label.pack()
+
+    def update_label(e=None):
+        scale_label.config(text=str(int(rating_var.get())))
+    scale.bind("<Motion>", update_label)
+    scale.bind("<ButtonRelease-1>", update_label)
+
+    def confirm():
+        rating_result[0] = int(rating_var.get())
+        dialog.destroy()
+
+    ttk.Button(dialog, text="Add to Favorites", command=confirm).pack(pady=(10, 0), ipady=5)
+    root.wait_window(dialog)
+    return rating_result[0]
+
+
 def add_to_favorites():
     global current_user_id
 
@@ -412,17 +458,22 @@ def add_to_favorites():
     selected_index = selected_index[0]
     movie = search_results_data[selected_index]
 
+    rating = get_rating_from_user(movie["title"])
+    if rating is None:
+        return  # User closed the dialog without rating
+
     try:
         with sqlite3.connect("users.db", timeout=10) as connection:
             cursor = connection.cursor()
             cursor.execute("""
-                INSERT INTO favorites (user_id, movie_id, movie_title, movie_year)
-                VALUES (?, ?, ?, ?)
+                INSERT INTO favorites (user_id, movie_id, movie_title, movie_year, rating)
+                VALUES (?, ?, ?, ?, ?)
             """, (
                 current_user_id,
                 movie["id"],
                 movie["title"],
-                movie["year"]
+                movie["year"],
+                rating
             ))
 
         load_favorites()
@@ -443,19 +494,53 @@ def load_favorites():
     with sqlite3.connect("users.db", timeout=10) as connection:
         cursor = connection.cursor()
         cursor.execute(
-            "SELECT id, movie_id, movie_title, movie_year FROM favorites WHERE user_id = ?",
+            "SELECT id, movie_id, movie_title, movie_year, rating FROM favorites WHERE user_id = ?",
             (current_user_id,)
         )
         rows = cursor.fetchall()
 
-    for favorite_id, movie_id, title, year in rows:
-        favorites_list.insert(tk.END, f"{title} ({year})")
+    rows = sorted(rows, key=lambda r: r[4] if r[4] is not None else 0, reverse=True)
+
+    for favorite_id, movie_id, title, year, rating in rows:
+        rating_str = f"  ★ {rating}/10" if rating is not None else ""
+        favorites_list.insert(tk.END, f"{title} ({year}){rating_str}")
         favorites_data.append({
             "id": favorite_id,
             "movie_id": movie_id,
             "title": title,
-            "year": year
-        })  
+            "year": year,
+            "rating": rating
+        })
+
+def edit_favorite_rating():
+    global current_user_id, favorites_data
+
+    if current_user_id is None:
+        messagebox.showerror("Error", "You must be logged in.")
+        return
+
+    selected_index = favorites_list.curselection()
+
+    if not selected_index:
+        messagebox.showerror("Error", "Please select a favorite movie to edit.")
+        return
+
+    selected_index = selected_index[0]
+    favorite = favorites_data[selected_index]
+
+    new_rating = get_rating_from_user(favorite["title"])
+    if new_rating is None:
+        return
+
+    with sqlite3.connect("users.db", timeout=10) as connection:
+        cursor = connection.cursor()
+        cursor.execute("""
+            UPDATE favorites SET rating = ?
+            WHERE id = ? AND user_id = ?
+        """, (new_rating, favorite["id"], current_user_id))
+
+    load_favorites()
+
 
 def remove_from_favorites():
     global current_user_id, favorites_data
@@ -550,6 +635,14 @@ remove_favorite_button = ttk.Button(
     command=remove_from_favorites
 )
 remove_favorite_button.pack(side="left", padx=(10, 0), ipady=6)
+
+# Edit Rating button
+edit_rating_button = ttk.Button(
+    search_row,
+    text="Edit Rating",
+    command=edit_favorite_rating
+)
+edit_rating_button.pack(side="left", padx=(10, 0), ipady=6)
 
 # Get Recommendations button
 recommendations_button = ttk.Button(
