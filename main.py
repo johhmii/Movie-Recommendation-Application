@@ -647,7 +647,7 @@ edit_rating_button.pack(side="left", padx=(10, 0), ipady=6)
 # Get Recommendations button
 recommendations_button = ttk.Button(
     search_row,
-    text="Get Recs!",
+    text="Get Recommendations",
     command=show_recommendations_page
 )
 recommendations_button.pack(side="left", padx=(10, 0), ipady=6)
