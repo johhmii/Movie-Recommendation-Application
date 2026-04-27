@@ -129,6 +129,16 @@ def initialize_database():
             )
         """)
 
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS not_interested (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL,
+                movie_id TEXT NOT NULL,
+                UNIQUE(user_id, movie_id),
+                FOREIGN KEY (user_id) REFERENCES users(id)
+            )
+        """)
+
         try:
             cursor.execute("ALTER TABLE favorites ADD COLUMN rating INTEGER")
         except sqlite3.OperationalError:
@@ -233,7 +243,7 @@ go_to_register_button = ttk.Button(
 )
 go_to_register_button.pack(fill="x", ipady=8)
 
-        
+
 # -----------------------------
 # REGISTRATION PAGE
 # -----------------------------
@@ -721,10 +731,10 @@ favorites_list = tk.Listbox(
 favorites_list.pack(fill="both", expand=True, pady=(0, 10))
 
 
-#Keystroke search function, 
+#Keystroke search function,
 search_delay = None                                  #Initialize to 0
 def on_keyrelease(event):                            #Function runs after each keystroke
-    global search_delay  
+    global search_delay
     if search_delay:                                 #If search_delay is already running cancel it
         root.after_cancel(search_delay)
     search_delay = root.after(300, sample_search)    #Start a 300ms delay as to not overwhelm API with calls
@@ -774,7 +784,7 @@ def show_movie_details(events = None):
     if details is None:
         messagebox.showerror("Error", "Failed to retrieve movie details.")
         return
-    
+
     #create popup with movie details, including title, release year, overview, and rating
     details_window = tk.Toplevel(root)
     details_window.title(details.get("title", "Movie Details"))
@@ -789,7 +799,7 @@ def show_movie_details(events = None):
     top_frame = ttk.Frame(container)
     top_frame.pack(fill="x", pady=(0, 15))
 
-    #poster label 
+    #poster label
     poster_label = ttk.Label(top_frame)
     poster_label.pack(side="left", padx=(0, 20))
 
@@ -894,7 +904,7 @@ def show_movie_details(events = None):
 
         except Exception:
             poster_label.config(text = "Poster not Available")
-    
+
     else:
         poster_label.config(text = "Poster not Available")
 
@@ -946,8 +956,38 @@ def load_recommendation_posters():
         ).grid(row=0, column=0)
         return
 
-    favorite_ids = [int(f["movie_id"]) for f in favorites_data]
+    favorite_ids = [str(f["movie_id"]) for f in favorites_data]
     recommended = get_final_recommendation(favorite_ids)
+
+    #get hidden movies
+    with sqlite3.connect("users.db", timeout=10) as connection:
+        cursor = connection.cursor()
+
+        cursor.execute(
+            "SELECT movie_id FROM not_interested WHERE user_id = ?",
+            (current_user_id,)
+        )
+
+        hidden_ids = {str(row[0]) for row in cursor.fetchall()}
+
+    #filter recommended
+    recommended = [
+        m for m in recommended
+        if str(m.get("id")) not in hidden_ids
+    ]
+
+    if not recommended:
+        ttk.Label(
+            rec_grid_frame,
+            text="No recommendations available.",
+            font=("Segeo UI", 12)
+        ).grid(row=0, column=0)
+        return
+
+    # continue normally
+    for index, movie in enumerate(recommended):
+        row = index // 5
+        col = index % 5
 
     for index, movie in enumerate(recommended):
         row = index // 5
@@ -955,6 +995,15 @@ def load_recommendation_posters():
 
         movie_frame = ttk.Frame(rec_grid_frame, padding=5)
         movie_frame.grid(row=row, column=col, padx=10, pady=10)
+
+        movie_id = movie.get("id")
+
+        not_interested_btn = ttk.Button(
+            movie_frame,
+            text="Not Interested",
+            command=lambda m_id=movie_id, f=movie_frame: mark_not_interested_recommendation(m_id, f)
+        )
+        not_interested_btn.pack(pady=(5, 0))
 
         poster_label = ttk.Label(movie_frame)
         poster_label.pack()
@@ -983,6 +1032,24 @@ def load_recommendation_posters():
         else:
             poster_label.config(text="No Poster")
 
+#Not Interested
+def mark_not_interested_recommendation(movie_id, frame):
+    global current_user_id
+
+    if current_user_id is None:
+        return
+
+    try:
+        with sqlite3.connect("users.db", timeout=10) as connection:
+            cursor = connection.cursor()
+            cursor.execute("""
+                INSERT INTO not_interested (user_id, movie_id)
+                VALUES (?, ?)
+            """, (current_user_id, movie_id))
+
+    #Remove movie visually from the grid
+    except sqlite3.IntegrityError:
+        frame.destroy()
 
 # -----------------------------
 # START APP
