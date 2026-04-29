@@ -543,6 +543,7 @@ def load_favorites():
         })
 
 def edit_favorite_rating():
+
     global current_user_id, favorites_data
 
     if current_user_id is None:
@@ -570,6 +571,41 @@ def edit_favorite_rating():
         """, (new_rating, favorite["id"], current_user_id))
 
     load_favorites()
+
+def remove_favorite_rating():
+    global current_user_id,favorites_data
+
+    if current_user_id is None:
+        messagebox.showerror("Error", "You must be logged in.")
+        return
+    
+    selected_index = favorites_list.curselection()
+
+    if not selected_index:
+        messagebox.showerror("Error", "Please select a favorite movie to remove the rating from.")
+        return
+    
+    selected_index = selected_index[0]
+    favorite = favorites_data[selected_index]
+
+    confirm = messagebox.askyesno(
+        "Remove Rating",
+        f"Remove rating from \"{favorite['title']}\"?"
+    )
+
+    if not confirm:
+        return
+    
+    with sqlite3.connect("users.db", timeout = 10) as connection:
+        cursor = connection.cursor()
+        cursor.execute("""
+                       UPDATE favorites
+                       SET rating = NULL
+                       WHERE id = ? AND user_id = ?
+                    """, (favorite["id"], current_user_id))
+        
+    load_favorites()
+    messagebox.showinfo("Success", "Rating Removed")
 
 
 def remove_from_favorites():
@@ -673,6 +709,17 @@ edit_rating_button = ttk.Button(
     command=edit_favorite_rating
 )
 edit_rating_button.pack(side="left", padx=(10, 0), ipady=6)
+
+# Remove Rating button
+remove_rating_button = ttk.Button(
+    search_row,
+    text="Remove Rating",
+    command=remove_favorite_rating
+)
+remove_rating_button.pack(side="left", padx=(10, 0), ipady=6)
+
+
+
 
 # Get Recommendations button
 recommendations_button = ttk.Button(
