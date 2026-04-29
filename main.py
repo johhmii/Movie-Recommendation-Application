@@ -314,8 +314,8 @@ reg_title.pack(pady=(0, 10))
 # Registration page subtitle
 reg_subtitle = ttk.Label(
     reg_card,
-    text="Register Down Below",
-    font=("Segeo UI", 12)
+    text="Just a few things first.",
+    font=("Segeo UI", 14)
 )
 reg_subtitle.pack(pady=(0, 20))
 
