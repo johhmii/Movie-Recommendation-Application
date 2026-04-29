@@ -41,38 +41,20 @@ def get_recommendations(movie_id):
 def get_final_recommendation(favorite_ids=None):
     seen_ids = set()
     frequency = {}
-    popularity = {}
     final = []
-    results = {}
 
     if favorite_ids:
         seen_ids.update(favorite_ids)
 
-    # Fetch all recommendations at the same time using threads
-    def fetch(movie_id):
-        results[movie_id] = get_recommendations(movie_id)
-
-    threads = []
     for movie_id in (favorite_ids or []):
-        t = threading.Thread(target=fetch, args=(movie_id,))
-        threads.append(t)
-        t.start()
-
-    # Wait for all threads to finish
-    for t in threads:
-        t.join()
-
-    # Process results
-    for movie_id in (favorite_ids or []):
-        for movie in results.get(movie_id, []):
+        for movie in get_recommendations(movie_id):
             if movie["id"] not in seen_ids:
                 seen_ids.add(movie["id"])
                 frequency[movie["id"]] = frequency.get(movie["id"], 0) + 1
-                popularity[movie["id"]] = movie.get("popularity", 0)
                 final.append(movie)
             else:
                 frequency[movie["id"]] = frequency.get(movie["id"], 0) + 1
 
     final = [m for m in final if m.get("vote_average", 0) >= 6.0]
-    final.sort(key=lambda m: (frequency.get(m["id"], 0), popularity.get(m["id"], 0)), reverse=True)
+    final.sort(key=lambda m: frequency.get(m["id"], 0), reverse=True)
     return final[:20]

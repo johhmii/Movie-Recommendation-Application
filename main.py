@@ -19,21 +19,8 @@ from io import BytesIO
 from quotes import quotes
 
 #imports for exporting files
-from reportlab.lib import colors
 from reportlab.lib.pagesizes import letter
-from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-from reportlab.lib.enums import TA_CENTER, TA_LEFT
 from reportlab.lib.units import inch
-from reportlab.platypus import (
-    SimpleDocTemplate,
-    Paragraph,
-    Spacer,
-    Table,
-    TableStyle,
-    Image as ReportImage
-)
-from datetime import datetime
-from xml.sax.saxutils import escape
 from reportlab.pdfgen import canvas
 
 
@@ -1012,17 +999,12 @@ def export_rec_to_pdf():
     
     pdf = canvas.Canvas(file_path,pagesize=letter)
     width, height = letter
-
     y = height - inch
 
     pdf.setFont("Helvetica-Bold", 20)
     pdf.drawString(inch, y, "Movie Reccomendations")
-
     y -=25
-    pdf.setFont("Helvetica", 10)
-    pdf.drawString(inch,y, "Movie Recommendation")
 
-    y = -35
     pdf.setFont("Helvetica-Bold", 12)
 
     for index, movie in enumerate(current_rec, start=1):
@@ -1091,15 +1073,12 @@ def add_to_watchlist(movie):
         messagebox.showerror("Error", "This movie is already in your watchlist.")
 
 def create_tooltip(widget, text):
-    tooltip = None
-
     def show(event):
-        nonlocal tooltip
-        tooltip = tk.Toplevel(widget)
-        tooltip.wm_overrideredirect(True)
-        tooltip.wm_geometry(f"+{event.x_root + 10}+{event.y_root + 10}")
+        widget.tooltip = tk.Toplevel(widget)
+        widget.tooltip.wm_overrideredirect(True)
+        widget.tooltip.wm_geometry(f"+{event.x_root + 10}+{event.y_root + 10}")
         ttk.Label(
-            tooltip,
+            widget.tooltip,
             text=text,
             font=("Segoe UI", 9),
             wraplength=200,
@@ -1108,10 +1087,9 @@ def create_tooltip(widget, text):
         ).pack()
 
     def hide(event):
-        nonlocal tooltip
-        if tooltip:
-            tooltip.destroy()
-            tooltip = None
+        if hasattr(widget, "tooltip") and widget.tooltip:
+            widget.tooltip.destroy()
+            widget.tooltip = None
 
     widget.bind("<Enter>", show)
     widget.bind("<Leave>", hide)
@@ -1205,7 +1183,7 @@ def load_recommendation_posters():
             poster_images.append(poster_image)
         else:
             poster_label.config(text="No Poster")   
-            
+
         overview = movie.get("overview", "No synopsis available.")
         tooltip_text = f"{title} ({year})\n\n{overview}"
         create_tooltip(poster_label, tooltip_text)          
