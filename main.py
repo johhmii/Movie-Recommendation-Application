@@ -53,10 +53,10 @@ root = tk.Tk()
 root.title("Movie Recommendation App")
 
 # Set the starting size of the window
-root.geometry("1100x800")
+root.geometry("1500x800")
 
 # Prevent the window from becoming too small
-root.minsize(850, 550)
+root.minsize(1500, 800)
 
 # Apply the Sun Valley dark theme
 sv_ttk.set_theme("dark")
@@ -95,6 +95,17 @@ def show_recommendations_page():
 def show_search_from_recommendations():
     recommendations_page.pack_forget()
     search_page.pack(fill = "both", expand = True)
+
+def show_watchlist_page():
+    search_page.pack_forget()
+    login_page.pack_forget()
+    registration_page.pack_forget()
+    load_watchlist()
+    watchlist_page.pack(fill="both", expand=True)
+
+def show_search_from_watchlist():
+    watchlist_page.pack_forget()
+    search_page.pack(fill="both", expand=True)
 
 def logout_user():
     global current_user_id
@@ -154,6 +165,17 @@ def initialize_database():
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 user_id INTEGER NOT NULL,
                 movie_id TEXT NOT NULL,
+                UNIQUE(user_id, movie_id),
+                FOREIGN KEY (user_id) REFERENCES users(id)
+            )
+        """)
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS watchlist (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL,
+                movie_id TEXT NOT NULL,
+                movie_title TEXT NOT NULL,
+                movie_year TEXT,
                 UNIQUE(user_id, movie_id),
                 FOREIGN KEY (user_id) REFERENCES users(id)
             )
@@ -710,10 +732,6 @@ edit_rating_button = ttk.Button(
 )
 edit_rating_button.pack(side="left", padx=(10, 0), ipady=6)
 
-
-
-
-
 # Get Recommendations button
 recommendations_button = ttk.Button(
     search_row,
@@ -721,6 +739,13 @@ recommendations_button = ttk.Button(
     command=show_recommendations_page
 )
 recommendations_button.pack(side="left", padx=(10, 0), ipady=6)
+
+watchlist_button = ttk.Button(
+    search_row,
+    text="My Watchlist",
+    command=show_watchlist_page
+)
+watchlist_button.pack(side="left", padx=(10, 0), ipady=6)
 
 # Logout button
 logout_button = ttk.Button(
@@ -1037,9 +1062,33 @@ export_pdf_button.pack(anchor="w",pady=(0,15))
 
 rec_grid_frame = ttk.Frame(recommendations_page, padding=10)
 rec_grid_frame.pack(fill="both", expand=True)
-
+for i in range(5):
+    rec_grid_frame.columnconfigure(i, weight=1)
+for i in range(2):
+    rec_grid_frame.rowconfigure(i, weight=1)
 poster_images = []
 
+def add_to_watchlist(movie):
+    global current_user_id
+
+    if current_user_id is None:
+        return
+
+    try:
+        with sqlite3.connect("users.db", timeout=10) as connection:
+            cursor = connection.cursor()
+            cursor.execute("""
+                INSERT INTO watchlist (user_id, movie_id, movie_title, movie_year)
+                VALUES (?, ?, ?, ?)
+            """, (
+                current_user_id,
+                movie.get("id"),
+                movie.get("title", "Unknown"),
+                movie.get("release_date", "")[:4]
+            ))
+        messagebox.showinfo("Success", f"{movie.get('title')} added to your watchlist!")
+    except sqlite3.IntegrityError:
+        messagebox.showerror("Error", "This movie is already in your watchlist.")
     
 def load_recommendation_posters():
     global poster_images, current_rec
@@ -1060,22 +1109,17 @@ def load_recommendation_posters():
     favorite_ids = [str(f["movie_id"]) for f in favorites_data]
     recommended = get_final_recommendation(favorite_ids)
 
-    #get hidden movies
+    # get hidden movies
     with sqlite3.connect("users.db", timeout=10) as connection:
         cursor = connection.cursor()
-
         cursor.execute(
             "SELECT movie_id FROM not_interested WHERE user_id = ?",
             (current_user_id,)
         )
-
         hidden_ids = {str(row[0]) for row in cursor.fetchall()}
 
-    #filter recommended
-    recommended = [
-        m for m in recommended
-        if str(m.get("id")) not in hidden_ids
-    ]
+    # filter out hidden movies
+    recommended = [m for m in recommended if str(m.get("id")) not in hidden_ids]
 
     current_rec = recommended
 
@@ -1083,14 +1127,9 @@ def load_recommendation_posters():
         ttk.Label(
             rec_grid_frame,
             text="No recommendations available.",
-            font=("Segeo UI", 12)
+            font=("Segoe UI", 12)
         ).grid(row=0, column=0)
         return
-
-    # continue normally
-    for index, movie in enumerate(recommended):
-        row = index // 5
-        col = index % 5
 
     for index, movie in enumerate(recommended):
         row = index // 5
@@ -1100,40 +1139,46 @@ def load_recommendation_posters():
         movie_frame.grid(row=row, column=col, padx=10, pady=10)
 
         movie_id = movie.get("id")
-
-        not_interested_btn = ttk.Button(
-            movie_frame,
-            text="Not Interested",
-            command=lambda m_id=movie_id, f=movie_frame: mark_not_interested_recommendation(m_id, f)
-        )
-        not_interested_btn.pack(pady=(5, 0))
-
-        poster_label = ttk.Label(movie_frame)
-        poster_label.pack()
-
         title = movie.get("title", "Unknown")
         year = movie.get("release_date", "")[:4]
 
-        ttk.Label(
-            movie_frame,
-            text=f"{title} ({year})",
-            font=("Helvetica", 9),
-            wraplength=100,
-            justify="center"
+        # Row for poster and buttons side by side
+        poster_button_row = ttk.Frame(movie_frame)
+        poster_button_row.pack()
+
+        # Poster on the left
+        poster_label = ttk.Label(poster_button_row)
+        poster_label.pack(side="left", padx=(0, 10))
+
+        # Buttons on the right
+        button_col = ttk.Frame(poster_button_row)
+        button_col.pack(side="left", anchor="n")
+
+        ttk.Button(
+            button_col,
+            text="Add to Watchlist",
+            command=lambda m=movie: add_to_watchlist(m)
         ).pack(pady=(5, 0))
 
+        ttk.Button(
+            button_col,
+            text="Not Interested",
+            command=lambda m_id=movie_id, f=movie_frame: mark_not_interested_recommendation(m_id, f)
+        ).pack(pady=(5, 0))
+
+        # Load poster image
         poster_path = movie.get("poster_path")
         if poster_path:
             poster_url = f"https://image.tmdb.org/t/p/w200{poster_path}"
             response = requests.get(poster_url, timeout=10)
             image_data = Image.open(BytesIO(response.content))
-            image_data = image_data.resize((100, 150))
+            image_data = image_data.resize((120, 180))
             poster_image = ImageTk.PhotoImage(image_data)
             poster_label.config(image=poster_image)
             poster_label.image = poster_image
             poster_images.append(poster_image)
         else:
-            poster_label.config(text="No Poster")
+            poster_label.config(text="No Poster")             
 
 #Not Interested
 def mark_not_interested_recommendation(movie_id, frame):
@@ -1154,6 +1199,96 @@ def mark_not_interested_recommendation(movie_id, frame):
     except sqlite3.IntegrityError:
         frame.destroy()
 
+# -----------------------------
+# WATCHLIST PAGE
+# -----------------------------
+
+watchlist_page = ttk.Frame(root, padding=25)
+
+# Header
+watchlist_header_frame = ttk.Frame(watchlist_page)
+watchlist_header_frame.pack(fill="x", pady=(0, 20))
+
+watchlist_title = ttk.Label(
+    watchlist_header_frame,
+    text="My Watchlist",
+    font=("Segoe UI", 24, "bold")
+)
+watchlist_title.pack(anchor="w")
+
+watchlist_subtitle = ttk.Label(
+    watchlist_header_frame,
+    text="Movies you want to watch",
+    font=("Segoe UI", 12)
+)
+watchlist_subtitle.pack(anchor="w", pady=(5, 0))
+
+# Back button
+watchlist_back_button = ttk.Button(
+    watchlist_page,
+    text="Back to Search",
+    command=show_search_from_watchlist
+)
+watchlist_back_button.pack(anchor="w", pady=(0, 15))
+
+def remove_from_watchlist():
+    selected_index = watchlist_list.curselection()
+
+    if not selected_index:
+        messagebox.showerror("Error", "Please select a movie to remove.")
+        return
+
+    selected_index = selected_index[0]
+    title = watchlist_list.get(selected_index).split(" (")[0]
+
+    with sqlite3.connect("users.db", timeout=10) as connection:
+        cursor = connection.cursor()
+        cursor.execute(
+            "DELETE FROM watchlist WHERE user_id = ? AND movie_title = ?",
+            (current_user_id, title)
+        )
+
+    load_watchlist()
+
+watchlist_remove_button = ttk.Button(
+    watchlist_page,
+    text="Remove from Watchlist",
+    command=remove_from_watchlist
+)
+watchlist_remove_button.pack(anchor="w", pady=(0, 15))
+
+
+# Watchlist listbox
+watchlist_list = tk.Listbox(
+    watchlist_page,
+    font=("Segoe UI", 12),
+    height=20,
+    bg="#2b2b2b",
+    fg="white",
+    selectbackground="#4a90e2",
+    selectforeground="white",
+    relief="flat",
+    highlightthickness=0
+)
+watchlist_list.pack(fill="both", expand=True)
+
+def load_watchlist():
+    global current_user_id
+    watchlist_list.delete(0, tk.END)
+
+    if current_user_id is None:
+        return
+
+    with sqlite3.connect("users.db", timeout=10) as connection:
+        cursor = connection.cursor()
+        cursor.execute(
+            "SELECT movie_title, movie_year FROM watchlist WHERE user_id = ?",
+            (current_user_id,)
+        )
+        rows = cursor.fetchall()
+
+    for title, year in rows:
+        watchlist_list.insert(tk.END, f"{title} ({year})")
 # -----------------------------
 # START APP
 # -----------------------------
