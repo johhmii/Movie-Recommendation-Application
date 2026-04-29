@@ -185,17 +185,24 @@ login_wrapper.pack(fill="both", expand=True)
 login_card = ttk.Frame(login_wrapper, padding=30)
 login_card.place(relx=0.5, rely=0.5, anchor="center")
 
+login_border_top = ttk.Label(
+    login_card,
+    text="🎬 ─────────────────── 🎬",
+    font=("Segoe UI", 16)
+)
+login_border_top.pack(pady=(0, 10))
+
 login_title = ttk.Label(
     login_card,
-    text="Welcome Back!",
-    font=("Segeo UI", 24, "bold")
+    text="Welcome Back! ",
+    font=("Segeo UI", 32, "bold")
 )
 login_title.pack(pady=(0, 10))
 
 login_subtitle = ttk.Label(
     login_card,
     text="Your next favorite movie is waiting.",
-    font=("Segeo UI", 12)
+    font=("Segeo UI", 16)
 )
 login_subtitle.pack(pady=(0, 20))
 
@@ -230,6 +237,7 @@ login_password_entry = ttk.Entry(
     show="*"
 )
 login_password_entry.pack(fill="x", ipady=6, pady=(0, 20))
+login_password_entry.bind("<Return>", lambda event: login_user())
 
 def login_user():
     global current_user_id
@@ -271,6 +279,13 @@ go_to_register_button = ttk.Button(
     command=show_registration_page
 )
 go_to_register_button.pack(fill="x", ipady=8)
+
+login_border_bottom = ttk.Label(
+    login_card,
+    text="🎬 ─────────────────── 🎬",
+    font=("Segoe UI", 16)
+)
+login_border_bottom.pack(pady=(10, 0))
 
 
 # -----------------------------
@@ -373,6 +388,7 @@ email_entry = ttk.Entry(
     width=35
 )
 email_entry.pack(fill="x", ipady=6, pady=(0, 20))
+email_entry.bind("<Return>", lambda event: register_user())
 
 
 def register_user():
@@ -825,6 +841,7 @@ def sample_search():
 
     if not movies:
         search_results.insert(tk.END, "No results.")
+        results_label.config(text="Search Results: (0 found)")
         return
 
     for movie in movies:
@@ -984,7 +1001,7 @@ def export_rec_to_pdf():
     global current_rec
 
     if not current_rec:
-        messagebox.showerror("ERROR", "NO RECCOMENDATIONS FOUUND TO EXPORT")
+        messagebox.showerror("ERROR", "NO RECOMMENDATIONS FOUUND TO EXPORT")
         return
     
     file_path = filedialog.asksaveasfilename(
@@ -1228,7 +1245,7 @@ watchlist_title.pack(anchor="w")
 
 watchlist_subtitle = ttk.Label(
     watchlist_header_frame,
-    text="Movies you want to watch",
+    text="Movies you're totally gonna watch... eventually",
     font=("Segoe UI", 12)
 )
 watchlist_subtitle.pack(anchor="w", pady=(5, 0))
@@ -1299,6 +1316,7 @@ def load_watchlist():
 
     for title, year in rows:
         watchlist_list.insert(tk.END, f"{title} ({year})")
+    watchlist_button.config(text=f"My Watchlist ({len(rows)})")
 # -----------------------------
 # START APP
 # -----------------------------
