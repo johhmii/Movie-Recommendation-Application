@@ -437,7 +437,7 @@ def get_rating_from_user(movie_title):
 
     dialog = tk.Toplevel(root)
     dialog.title("Rate this Movie")
-    dialog.geometry("340x180")
+    dialog.geometry("400x250")
     dialog.resizable(False, False)
     dialog.grab_set()
 
@@ -468,6 +468,12 @@ def get_rating_from_user(movie_title):
         dialog.destroy()
 
     ttk.Button(dialog, text="Add to Favorites", command=confirm).pack(pady=(10, 0), ipady=5)
+
+    def remove():
+        rating_result[0] = None
+        dialog.destroy()
+
+    ttk.Button(dialog, text="Remove Rating", command=remove).pack(pady=(5, 0), ipady=5)
     root.wait_window(dialog)
     return rating_result[0]
 
@@ -561,8 +567,9 @@ def edit_favorite_rating():
 
     new_rating = get_rating_from_user(favorite["title"])
     if new_rating is None:
+        remove_favorite_rating()
         return
-
+    
     with sqlite3.connect("users.db", timeout=10) as connection:
         cursor = connection.cursor()
         cursor.execute("""
@@ -588,13 +595,6 @@ def remove_favorite_rating():
     selected_index = selected_index[0]
     favorite = favorites_data[selected_index]
 
-    confirm = messagebox.askyesno(
-        "Remove Rating",
-        f"Remove rating from \"{favorite['title']}\"?"
-    )
-
-    if not confirm:
-        return
     
     with sqlite3.connect("users.db", timeout = 10) as connection:
         cursor = connection.cursor()
@@ -605,7 +605,7 @@ def remove_favorite_rating():
                     """, (favorite["id"], current_user_id))
         
     load_favorites()
-    messagebox.showinfo("Success", "Rating Removed")
+    
 
 
 def remove_from_favorites():
@@ -710,13 +710,6 @@ edit_rating_button = ttk.Button(
 )
 edit_rating_button.pack(side="left", padx=(10, 0), ipady=6)
 
-# Remove Rating button
-remove_rating_button = ttk.Button(
-    search_row,
-    text="Remove Rating",
-    command=remove_favorite_rating
-)
-remove_rating_button.pack(side="left", padx=(10, 0), ipady=6)
 
 
 
@@ -933,27 +926,6 @@ def show_movie_details(events = None):
     overview = details.get("overview", "No synopsis available.")
     overview_text.insert("1.0", overview)
     overview_text.config(state="disabled")
-
-    #actors section
-
-    cast_names = "Unknown"
-    if "credits" in details and "cast" in details:
-        cast_list = details["credits"]["cast"][:5]  # Get top 5 cast members
-        cast_names = ", ".join(actor["name"] for actor in cast_list) if cast_list else "Unknown"
-
-    ttk.Label(
-        container,
-        text=f"Top Cast:",
-        font=("Segeo UI", 14, "bold")
-    ).pack(anchor="w", pady = (5, 5))
-
-    ttk.Label(
-        container,
-        text=cast_names,
-        font=("Segeo UI", 11),
-        wraplength = 620,
-        justify = "left",
-    ).pack(anchor="w", pady = (0, 15))
 
     #load poster image
 
