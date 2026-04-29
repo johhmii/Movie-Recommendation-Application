@@ -6,22 +6,42 @@
 # David Ulloa
 # Andy Vu
 
-import sqlite3 #Python's built in database, Sufficient for our needs and easy to set up, no external dependencies required
+import sqlite3
 import tkinter as tk
 import requests
 import sv_ttk
 import random
 
-from tkinter import ttk, messagebox
+from tkinter import ttk, messagebox, filedialog
 from wrapper import search_movies, get_movie, get_genres, get_final_recommendation
 from PIL import Image, ImageTk
 from io import BytesIO
 from quotes import quotes
 
+#imports for exporting files
+from reportlab.lib import colors
+from reportlab.lib.pagesizes import letter
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib.enums import TA_CENTER, TA_LEFT
+from reportlab.lib.units import inch
+from reportlab.platypus import (
+    SimpleDocTemplate,
+    Paragraph,
+    Spacer,
+    Table,
+    TableStyle,
+    Image as ReportImage
+)
+from datetime import datetime
+from xml.sax.saxutils import escape
+from reportlab.pdfgen import canvas
+
+
 current_user_id = None  # Global variable to store the currently logged-in user's information
 search_results_data = []  # Global variable to store the data of the movies currently displayed in the search results
 favorites_data = []  # Global variable to store the data of the movies currently in the user's favorites list
 all_genres = get_genres() #Global variable that initializes genres
+current_rec = [] #Global variable for list of reccomendations
 # -----------------------------
 # MAIN WINDOW SETUP
 # -----------------------------
@@ -928,6 +948,58 @@ rec_title = ttk.Label(
 )
 rec_title.pack(anchor="w")
 
+#Function exports reccomendations list to PDF File
+def export_rec_to_pdf():
+    global current_rec
+
+    if not current_rec:
+        messagebox.showerror("ERROR", "NO RECCOMENDATIONS FOUUND TO EXPORT")
+        return
+    
+    file_path = filedialog.asksaveasfilename(
+        defaultextension=".pdf",
+        filetypes=[("PDF Files", "*.pdf")],
+        title = "Save Recommendations as a PDF",
+        initialfile="WATCH_LIST_RECOMMENDATION"    
+    )
+
+    if not file_path:
+        return
+    
+    pdf = canvas.Canvas(file_path,pagesize=letter)
+    width, height = letter
+
+    y = height - inch
+
+    pdf.setFont("Helvetica-Bold", 20)
+    pdf.drawString(inch, y, "Movie Reccomendations")
+
+    y -=25
+    pdf.setFont("Helvetica", 10)
+    pdf.drawString(inch,y, "Movie Recommendation")
+
+    y = -35
+    pdf.setFont("Helvetica-Bold", 12)
+
+    for index, movie in enumerate(current_rec, start=1):
+        title = movie.get("title","Unknown")
+        year = movie.get("release_date", "")[:4]
+        rating = movie.get("vote_average", "N/A")
+
+        line = f"{index}. {title} ({year}) - Rating {rating}"
+
+        if y < inch:
+            pdf.showPage()
+            y = height - inch
+            pdf.setFont("Helvetica-Bold", 12)
+
+        pdf.drawString(inch, y, line)
+        y -= 22
+
+    pdf.save()
+
+    messagebox.showinfo("Success", f"Recommendations exported to:\n{file_path}")
+
 #Back Button
 rec_back_button = ttk.Button(
     recommendations_page,
@@ -936,14 +1008,24 @@ rec_back_button = ttk.Button(
 )
 rec_back_button.pack(anchor = "w", pady = (0,15))
 
+#Export Reccomendations to PDF Button
+export_pdf_button = ttk.Button(
+    recommendations_page,
+    text = "Export Recommendations to PDF",
+    command=export_rec_to_pdf
+)
+export_pdf_button.pack(anchor="w",pady=(0,15))
+
 rec_grid_frame = ttk.Frame(recommendations_page, padding=10)
 rec_grid_frame.pack(fill="both", expand=True)
 
 poster_images = []
 
+    
 def load_recommendation_posters():
-    global poster_images
+    global poster_images, current_rec
     poster_images = []
+    current_rec = []
 
     for widget in rec_grid_frame.winfo_children():
         widget.destroy()
@@ -975,6 +1057,8 @@ def load_recommendation_posters():
         m for m in recommended
         if str(m.get("id")) not in hidden_ids
     ]
+
+    current_rec = recommended
 
     if not recommended:
         ttk.Label(
