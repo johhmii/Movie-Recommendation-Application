@@ -1089,7 +1089,33 @@ def add_to_watchlist(movie):
         messagebox.showinfo("Success", f"{movie.get('title')} added to your watchlist!")
     except sqlite3.IntegrityError:
         messagebox.showerror("Error", "This movie is already in your watchlist.")
-    
+
+def create_tooltip(widget, text):
+    tooltip = None
+
+    def show(event):
+        nonlocal tooltip
+        tooltip = tk.Toplevel(widget)
+        tooltip.wm_overrideredirect(True)
+        tooltip.wm_geometry(f"+{event.x_root + 10}+{event.y_root + 10}")
+        ttk.Label(
+            tooltip,
+            text=text,
+            font=("Segoe UI", 9),
+            wraplength=200,
+            justify="left",
+            padding=8
+        ).pack()
+
+    def hide(event):
+        nonlocal tooltip
+        if tooltip:
+            tooltip.destroy()
+            tooltip = None
+
+    widget.bind("<Enter>", show)
+    widget.bind("<Leave>", hide)
+
 def load_recommendation_posters():
     global poster_images, current_rec
     poster_images = []
@@ -1178,7 +1204,11 @@ def load_recommendation_posters():
             poster_label.image = poster_image
             poster_images.append(poster_image)
         else:
-            poster_label.config(text="No Poster")             
+            poster_label.config(text="No Poster")   
+            
+        overview = movie.get("overview", "No synopsis available.")
+        tooltip_text = f"{title} ({year})\n\n{overview}"
+        create_tooltip(poster_label, tooltip_text)          
 
 #Not Interested
 def mark_not_interested_recommendation(movie_id, frame):
