@@ -1119,7 +1119,7 @@ def load_recommendation_posters():
         hidden_ids = {str(row[0]) for row in cursor.fetchall()}
 
     # filter out hidden movies
-    recommended = [m for m in recommended if str(m.get("id")) not in hidden_ids]
+    recommended = [m for m in recommended if str(m.get("id")) not in hidden_ids][:10]
 
     current_rec = recommended
 
@@ -1197,7 +1197,9 @@ def mark_not_interested_recommendation(movie_id, frame):
 
     #Remove movie visually from the grid
     except sqlite3.IntegrityError:
-        frame.destroy()
+        pass
+    load_recommendation_posters()
+
 
 # -----------------------------
 # WATCHLIST PAGE

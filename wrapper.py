@@ -75,4 +75,4 @@ def get_final_recommendation(favorite_ids=None):
 
     final = [m for m in final if m.get("vote_average", 0) >= 6.0]
     final.sort(key=lambda m: (frequency.get(m["id"], 0), popularity.get(m["id"], 0)), reverse=True)
-    return final[:10]
+    return final[:20]
