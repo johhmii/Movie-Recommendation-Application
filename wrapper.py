@@ -1,6 +1,6 @@
 #Simple API wrapper for TMDB 
 import requests
-
+import threading
 BASE_URL = "https://api.themoviedb.org/3"
 API_KEY = "8b3549b6ca7e044a906dea4d61a34125"
 
@@ -38,20 +38,33 @@ def get_recommendations(movie_id):
     return response.json().get("results", [])
 
 
-# Produces final recommendation mix of similar and recommended movies
 def get_final_recommendation(favorite_ids=None):
     seen_ids = set()
     frequency = {}
     popularity = {}
     final = []
+    results = {}
 
     if favorite_ids:
         seen_ids.update(favorite_ids)
 
-    for movie_id in (favorite_ids or []):
-        recommendations = get_recommendations(movie_id)
+    # Fetch all recommendations at the same time using threads
+    def fetch(movie_id):
+        results[movie_id] = get_recommendations(movie_id)
 
-        for movie in recommendations:
+    threads = []
+    for movie_id in (favorite_ids or []):
+        t = threading.Thread(target=fetch, args=(movie_id,))
+        threads.append(t)
+        t.start()
+
+    # Wait for all threads to finish
+    for t in threads:
+        t.join()
+
+    # Process results
+    for movie_id in (favorite_ids or []):
+        for movie in results.get(movie_id, []):
             if movie["id"] not in seen_ids:
                 seen_ids.add(movie["id"])
                 frequency[movie["id"]] = frequency.get(movie["id"], 0) + 1
