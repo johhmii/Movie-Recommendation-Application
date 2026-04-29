@@ -23,7 +23,7 @@ Group 6's submission for Computer Science 362 , Section ?
 1.) Make sure you have Python 3.14 installed on your device from https://www.python.org/downloads/   
 2.) Once you have python installed on your console, download the following packages in your terminal.
 ```console
-py -m pip install requests pillow sv-ttk
+py -m pip install requests pillow sv-ttk reportlab
 ```
 3.) Download the repository from github and place it in a destination of your choosing.
 
